@@ -20,6 +20,7 @@ func (c *Campsite) Create(booking Booking) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	booking.UUID = uuid.New().String()
+	booking.Active = true
 	c.bookings = append(c.bookings, booking)
 	return booking.UUID, nil
 }
