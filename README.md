@@ -4,13 +4,13 @@ This workshop covers material from
 the ["Distributed Services with Go"](https://www.amazon.ca/Distributed-Services-Go-Reliable-Maintainable/dp/1680507605)
 book.
 
-Instead of the commit log application, a simplified version of
+Instead of the [commit log](https://github.com/travisjeffery/proglog) application, a simplified version of
 the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example application.
 
 **Table of Contents**
 
 - [X] [1.Let's Go](/LetsGo)
-- [ ] 2.Structure Data with Protocol Buffers 
+- [X] [2.Structure Data with Protocol Buffers](/StructureDataWithProtobuf) 
 - [ ] 3.Write a Log Package
 - [ ] 4.Serve Requests with gRPC
 - [ ] 5.Secure Your Services
