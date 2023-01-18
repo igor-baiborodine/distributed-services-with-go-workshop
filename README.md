@@ -11,8 +11,8 @@ the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking)
 
 - [X] [1.Let's Go](/LetsGo)
 - [X] [2.Structure Data with Protocol Buffers](/StructureDataWithProtobuf) 
-- [X] [3.Write a Log Package](/WriteALogPackage)
-- [ ] 4.Serve Requests with gRPC
+- [ ] ~~3.Write a Log Package~~
+- [X] [4.Serve Requests with gRPC](/ServeRequestsWithgRPC)
 - [ ] 5.Secure Your Services
 - [ ] 6.Observe Your Systems
 - [ ] 7.Server-to-server Service Discovery
