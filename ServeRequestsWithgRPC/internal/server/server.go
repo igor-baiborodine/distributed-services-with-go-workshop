@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/google/uuid"
+
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/store"
@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	BookingStore store.BookingStore
+	BookingStore *store.BookingStore
 }
 
 type grpcServer struct {
@@ -49,7 +49,7 @@ func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequ
 	*api.CreateBookingResponse, error) {
 
 	b := model.Booking{
-		UUID:      uuid.New().String(),
+		UUID:      req.GetBooking().UUID,
 		Email:     req.GetBooking().Email,
 		FullName:  req.GetBooking().FullName,
 		StartDate: req.GetBooking().StartDate,

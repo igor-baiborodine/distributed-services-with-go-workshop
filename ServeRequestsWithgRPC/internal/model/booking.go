@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 )
 

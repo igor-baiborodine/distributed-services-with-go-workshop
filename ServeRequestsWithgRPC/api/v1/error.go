@@ -2,6 +2,7 @@ package booking_v1
 
 import (
 	"fmt"
+
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/status"
 )
@@ -11,7 +12,7 @@ type ErrBookingNotFound struct {
 }
 
 type ErrCreateBooking struct {
-	Booking *CreateBookingRequest_Booking
+	Booking *Booking
 }
 
 func (e ErrBookingNotFound) GRPCStatus() *status.Status {

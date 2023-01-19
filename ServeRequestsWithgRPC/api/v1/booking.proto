@@ -17,12 +17,6 @@ message GetBookingResponse  {
 }
 
 message CreateBookingRequest {
-  message Booking {
-    string Email = 1;
-    string FullName = 2;
-    string StartDate = 3;
-    string EndDate = 4;
-  }
   Booking booking = 1;
 }
 

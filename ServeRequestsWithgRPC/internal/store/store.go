@@ -2,9 +2,10 @@ package store
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 	"golang.org/x/exp/slices"
-	"sync"
 )
 
 type BookingStore struct {
@@ -12,8 +13,8 @@ type BookingStore struct {
 	bookings []model.Booking
 }
 
-func NewBookingStore() *BookingStore {
-	return &BookingStore{}
+func NewBookingStore() (*BookingStore, error) {
+	return &BookingStore{}, nil
 }
 
 func (c *BookingStore) GetByUUID(uuid string) (model.Booking, error) {
