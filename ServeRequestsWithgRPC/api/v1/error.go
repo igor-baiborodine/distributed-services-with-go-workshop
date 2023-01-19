@@ -10,6 +10,10 @@ type ErrBookingNotFound struct {
 	UUID string
 }
 
+type ErrCreateBooking struct {
+	Booking *CreateBookingRequest_Booking
+}
+
 func (e ErrBookingNotFound) GRPCStatus() *status.Status {
 	msg := fmt.Sprintf("no booking found for UUID: %s", e.UUID)
 	st := status.New(404, msg)
@@ -26,5 +30,24 @@ func (e ErrBookingNotFound) GRPCStatus() *status.Status {
 }
 
 func (e ErrBookingNotFound) Error() string {
+	return e.GRPCStatus().Err().Error()
+}
+
+func (e ErrCreateBooking) GRPCStatus() *status.Status {
+	msg := fmt.Sprintf("cannot create booking: %s", e.Booking)
+	st := status.New(400, msg)
+
+	d := &errdetails.LocalizedMessage{
+		Locale:  "en-US",
+		Message: msg,
+	}
+	std, err := st.WithDetails(d)
+	if err != nil {
+		return st
+	}
+	return std
+}
+
+func (e ErrCreateBooking) Error() string {
 	return e.GRPCStatus().Err().Error()
 }

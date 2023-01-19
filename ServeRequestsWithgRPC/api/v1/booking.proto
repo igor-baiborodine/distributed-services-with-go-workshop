@@ -6,12 +6,27 @@ option go_package = "github.com/igor-baiborodine/api/booking_v1";
 
 service BookingService {
   rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
+  rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
 }
 
 message GetBookingRequest {
   string uuid = 1;
 }
 message GetBookingResponse  {
+  Booking booking = 1;
+}
+
+message CreateBookingRequest {
+  message Booking {
+    string Email = 1;
+    string FullName = 2;
+    string StartDate = 3;
+    string EndDate = 4;
+  }
+  Booking booking = 1;
+}
+
+message CreateBookingResponse {
   Booking booking = 1;
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/google/uuid"
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/store"
@@ -44,6 +45,25 @@ func (s *grpcServer) GetBooking(_ context.Context, req *api.GetBookingRequest) (
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
 
+func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequest) (
+	*api.CreateBookingResponse, error) {
+
+	b := model.Booking{
+		UUID:      uuid.New().String(),
+		Email:     req.GetBooking().Email,
+		FullName:  req.GetBooking().FullName,
+		StartDate: req.GetBooking().StartDate,
+		EndDate:   req.GetBooking().EndDate,
+		Active:    true,
+	}
+	err := s.BookingStore.Create(b)
+	if err != nil {
+		return nil, api.ErrCreateBooking{Booking: req.GetBooking()}
+	}
+	return &api.CreateBookingResponse{Booking: b.ProtoBooking()}, nil
+}
+
 type BookingStore interface {
 	GetByUUID(uuid string) (model.Booking, error)
+	Create(b model.Booking) error
 }

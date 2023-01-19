@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 )
 
@@ -24,4 +25,9 @@ func (b *Booking) ProtoBooking() *api.Booking {
 		EndDate:   b.EndDate,
 		Active:    b.Active,
 	}
+}
+
+func (b Booking) String() string {
+	return fmt.Sprintf("Booking(%s, %s, %s, %s, %s, %t)",
+		b.UUID, b.Email, b.FullName, b.StartDate, b.EndDate, b.Active)
 }
