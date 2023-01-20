@@ -40,8 +40,8 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	l, err := net.Listen("tcp", ":0")
 	require.NoError(t, err)
 
-	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	cc, err := grpc.Dial(l.Addr().String(), opts...)
 	require.NoError(t, err)
 
 	bs, err := store.NewBookingStore()
