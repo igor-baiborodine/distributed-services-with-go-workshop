@@ -5,7 +5,7 @@ the ["Distributed Services with Go"](https://www.amazon.ca/Distributed-Services-
 book.
 
 Instead of the [Commit Log](https://github.com/travisjeffery/proglog) application, a simplified version of
-the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example application.
+the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example.
 
 **Table of Contents**
 
