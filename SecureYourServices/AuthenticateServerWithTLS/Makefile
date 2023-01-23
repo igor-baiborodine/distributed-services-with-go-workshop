@@ -20,6 +20,8 @@ gencert:
 		-profile=server \
 		test/server-csr.json | cfssljson -bare server
 
+	mv *.pem *.csr ${CONFIG_PATH}
+
 .PHONY: test
 test:
 	go test -race ./...

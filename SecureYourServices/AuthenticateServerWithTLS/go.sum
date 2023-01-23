@@ -8,8 +8,6 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC v0.0.0-20230119203126-419a3df118ed h1:TNXDxQ52o6G3ETPHgg4Sf1dzZXXEdAmTHht4w0INi1w=
-github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC v0.0.0-20230119203126-419a3df118ed/go.mod h1:9d30+eikni7dkO/sMprPWyvjkiAjAoWnGqEKAenH8zI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
