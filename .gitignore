@@ -112,7 +112,3 @@ modules.xml
 *.ipr
 
 # End of https://www.toptal.com/developers/gitignore/api/go,intellij+iml
-
-### Certs
-*/*.pem
-*/*.csr
