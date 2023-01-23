@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package booking.v1;
+
+option go_package = "github.com/igor-baiborodine/api/booking_v1";
+
+service BookingService {
+  rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
+  rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
+}
+
+message GetBookingRequest {
+  string uuid = 1;
+}
+message GetBookingResponse  {
+  Booking booking = 1;
+}
+
+message CreateBookingRequest {
+  Booking booking = 1;
+}
+
+message CreateBookingResponse {
+  Booking booking = 1;
+}
+
+message Booking {
+  string UUID = 1;
+  string Email = 2;
+  string FullName = 3;
+  string StartDate = 4;
+  string EndDate = 5;
+  bool   Active = 6;
+}
