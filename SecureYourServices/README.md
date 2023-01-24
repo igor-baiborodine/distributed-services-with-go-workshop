@@ -1,4 +1,4 @@
-## Authenticate the Server with TLS
+## Secure Your Services
 
 ### Prerequisites
 
