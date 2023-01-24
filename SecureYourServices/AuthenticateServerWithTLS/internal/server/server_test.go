@@ -20,17 +20,17 @@ import (
 
 func TestServer(t *testing.T) {
 	tests := []struct {
-		scenario string
-		fn       func(t *testing.T, client api.BookingServiceClient, cfg *Config)
-		secure   bool
+		desc string
+		fn   func(t *testing.T, client api.BookingServiceClient, cfg *Config)
+		tls  bool
 	}{
 		{"create/get booking succeeds", testCreateGet, true},
 		{"get non-existing booking fails", testGetNonExisting, true},
 		{"insecure get non-existing booking fails", testInsecureGetNonExisting, false},
 	}
 	for _, test := range tests {
-		t.Run(test.scenario, func(t *testing.T) {
-			client, cfg, teardown := setupTest(t, nil, test.secure)
+		t.Run(test.desc, func(t *testing.T) {
+			client, cfg, teardown := setupTest(t, nil, test.tls)
 			defer teardown()
 			test.fn(t, client, cfg)
 		})
