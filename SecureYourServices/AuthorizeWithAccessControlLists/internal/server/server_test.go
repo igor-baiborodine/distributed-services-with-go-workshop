@@ -158,14 +158,13 @@ func testGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
 func testUnauthorized(t *testing.T, _ api.BookingServiceClient,
 	nobodyClient api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
-	u := uuid.New().String()
+	got, err := nobodyClient.GetBooking(ctx,
+		&api.GetBookingRequest{Uuid: uuid.New().String()})
 
-	got, err := nobodyClient.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
-	if got != nil {
-		t.Fatalf("get booking response should be nil")
-	}
-	gotCode, wantCode := status.Code(err), codes.PermissionDenied
-	if gotCode != wantCode {
-		t.Fatalf("got code: %d, want: %d", gotCode, wantCode)
-	}
+	require.Nilf(t, got, "get booking response should be nil")
+	require.Error(t, err)
+
+	s := status.Convert(err)
+	assert.Equal(t, s.Code(), codes.PermissionDenied)
+	assert.Equal(t, s.Message(), "nobody not permitted to getBooking to *")
 }
