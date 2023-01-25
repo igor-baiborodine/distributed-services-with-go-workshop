@@ -7,13 +7,17 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/config"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
+
+	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/auth"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/config"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/store"
 )
 
 func TestServer(t *testing.T) {
@@ -24,6 +28,7 @@ func TestServer(t *testing.T) {
 	}{
 		{"create/get booking succeeds", testCreateGet},
 		{"get non-existing booking fails", testGetNonExisting},
+		{"unauthorized fails", testUnauthorized},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -90,8 +95,10 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	bs, err := store.NewBookingStore()
 	require.NoError(t, err)
 
+	authorizer := auth.New(config.ACLModelFile, config.ACLPolicyFile)
 	cfg = &Config{
 		BookingStore: bs,
+		Authorizer:   authorizer,
 	}
 	if fn != nil {
 		fn(cfg)
@@ -112,7 +119,7 @@ func setupTest(t *testing.T, fn func(*Config)) (
 }
 
 func testCreateGet(t *testing.T, rootClient api.BookingServiceClient,
-	nobodyClient api.BookingServiceClient, _ *Config) {
+	_ api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	want := &api.Booking{
 		UUID:      uuid.New().String(),
@@ -138,7 +145,7 @@ func testCreateGet(t *testing.T, rootClient api.BookingServiceClient,
 }
 
 func testGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
-	nobodyClient api.BookingServiceClient, _ *Config) {
+	_ api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
 
@@ -148,13 +155,17 @@ func testGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
 		fmt.Sprintf("no booking found for UUID: %s", u))
 }
 
-func testInsecureGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
+func testUnauthorized(t *testing.T, _ api.BookingServiceClient,
 	nobodyClient api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
 
-	_, err := rootClient.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(),
-		"connection error: desc = \"error reading server preface: EOF\"")
+	got, err := nobodyClient.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
+	if got != nil {
+		t.Fatalf("get booking response should be nil")
+	}
+	gotCode, wantCode := status.Code(err), codes.PermissionDenied
+	if gotCode != wantCode {
+		t.Fatalf("got code: %d, want: %d", gotCode, wantCode)
+	}
 }

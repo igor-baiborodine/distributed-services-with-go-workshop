@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/casbin/casbin v1.9.1
 	github.com/google/uuid v1.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/exp v0.0.0-20230124195608-d38c7dcee874
 	google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
