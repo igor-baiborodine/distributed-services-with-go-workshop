@@ -10,8 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateServerWithTLS/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateServerWithTLS/internal/config"
@@ -26,7 +28,7 @@ func TestServer(t *testing.T) {
 	}{
 		{"create/get booking succeeds", testCreateGet, true},
 		{"get non-existing booking fails", testGetNonExisting, true},
-		{"insecure get non-existing booking fails", testInsecureGetNonExisting, false},
+		{"insecure fails", testInsecureGetNonExisting, false},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -132,9 +134,13 @@ func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config
 
 func testInsecureGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
-	u := uuid.New().String()
-
-	_, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
+	got, err := client.GetBooking(ctx,
+		&api.GetBookingRequest{Uuid: uuid.New().String()})
+	require.Nilf(t, got, "get booking response should be nil")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "connection error: desc = \"error reading server preface: EOF\"")
+
+	s := status.Convert(err)
+	assert.Equal(t, s.Code(), codes.Unavailable)
+	assert.Equal(t, s.Message(),
+		"connection error: desc = \"error reading server preface: EOF\"")
 }
