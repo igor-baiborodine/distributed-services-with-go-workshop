@@ -5,7 +5,7 @@ the ["Distributed Services with Go"](https://www.amazon.ca/Distributed-Services-
 book.
 
 Instead of the [Commit Log](https://github.com/travisjeffery/proglog) application, a simplified version of
-the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example application.
+the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example.
 
 **Table of Contents**
 
@@ -13,7 +13,7 @@ the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking)
 - [X] [2.Structure Data with Protocol Buffers](/StructureDataWithProtobuf) 
 - [ ] ~~3.Write a Log Package~~
 - [X] [4.Serve Requests with gRPC](/ServeRequestsWithgRPC)
-- [ ] 5.Secure Your Services
+- [X] [5.Secure Your Services](/SecureYourServices)
 - [ ] 6.Observe Your Systems
 - [ ] 7.Server-to-server Service Discovery
 - [ ] 8.Coordinate Your Services with Consensus

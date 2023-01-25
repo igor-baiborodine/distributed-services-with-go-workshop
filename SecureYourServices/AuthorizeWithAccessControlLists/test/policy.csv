@@ -1,0 +1,2 @@
+p, root, *, createBooking
+p, root, *, getBooking
