@@ -7,11 +7,10 @@ import (
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateClientWithMutualTLSAuthentication/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateClientWithMutualTLSAuthentication/internal/model"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateClientWithMutualTLSAuthentication/internal/store"
 )
 
 type Config struct {
-	BookingStore *store.BookingStore
+	BookingStore BookingStore
 }
 
 type grpcServer struct {
