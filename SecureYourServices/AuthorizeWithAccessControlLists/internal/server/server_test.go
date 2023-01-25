@@ -7,38 +7,36 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/config"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/config"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/store"
 )
 
 func TestServer(t *testing.T) {
 	tests := []struct {
 		desc string
-		fn   func(t *testing.T, client api.BookingServiceClient, cfg *Config)
-		tls  bool
+		fn   func(t *testing.T, rootClient api.BookingServiceClient,
+			nobodyClient api.BookingServiceClient, cfg *Config)
 	}{
-		{"create/get booking succeeds", testCreateGet, true},
-		{"get non-existing booking fails", testGetNonExisting, true},
-		{"insecure get non-existing booking fails", testInsecureGetNonExisting, false},
+		{"create/get booking succeeds", testCreateGet},
+		{"get non-existing booking fails", testGetNonExisting},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			client, cfg, teardown := setupTest(t, nil, test.tls)
+			rootClient, nobodyClient, cfg, teardown := setupTest(t, nil)
 			defer teardown()
-			test.fn(t, client, cfg)
+			test.fn(t, rootClient, nobodyClient, cfg)
 		})
 	}
 }
 
-func setupTest(t *testing.T, fn func(*Config), secure bool) (
-	client api.BookingServiceClient,
+func setupTest(t *testing.T, fn func(*Config)) (
+	rootClient api.BookingServiceClient,
+	nobodyClient api.BookingServiceClient,
 	cfg *Config,
 	teardown func(),
 ) {
@@ -47,24 +45,37 @@ func setupTest(t *testing.T, fn func(*Config), secure bool) (
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	clientTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
-		CertFile: config.ClientCertFile,
-		KeyFile:  config.ClientKeyFile,
-		CAFile:   config.CAFile,
-	})
-	require.NoError(t, err)
-
-	clientCreds := insecure.NewCredentials()
-	if secure {
-		clientCreds = credentials.NewTLS(clientTLSConfig)
+	newClient := func(crtPath, keyPath string) (
+		*grpc.ClientConn,
+		api.BookingServiceClient,
+		[]grpc.DialOption,
+	) {
+		tlsConfig, err := config.SetupTLSConfig(config.TLSConfig{
+			CertFile: crtPath,
+			KeyFile:  keyPath,
+			CAFile:   config.CAFile,
+			Server:   false,
+		})
+		require.NoError(t, err)
+		tlsCreds := credentials.NewTLS(tlsConfig)
+		opts := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
+		conn, err := grpc.Dial(l.Addr().String(), opts...)
+		require.NoError(t, err)
+		client := api.NewBookingServiceClient(conn)
+		return conn, client, opts
 	}
-	cc, err := grpc.Dial(
-		l.Addr().String(),
-		grpc.WithTransportCredentials(clientCreds),
-	)
-	require.NoError(t, err)
 
-	client = api.NewBookingServiceClient(cc)
+	var rootConn *grpc.ClientConn
+	rootConn, rootClient, _ = newClient(
+		config.RootClientCertFile,
+		config.RootClientKeyFile,
+	)
+
+	var nobodyConn *grpc.ClientConn
+	nobodyConn, nobodyClient, _ = newClient(
+		config.NobodyClientCertFile,
+		config.NobodyClientKeyFile,
+	)
 
 	serverTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
 		CertFile:      config.ServerCertFile,
@@ -92,16 +103,16 @@ func setupTest(t *testing.T, fn func(*Config), secure bool) (
 		server.Serve(l)
 	}()
 
-	client = api.NewBookingServiceClient(cc)
-
-	return client, cfg, func() {
+	return rootClient, nobodyClient, cfg, func() {
 		server.Stop()
-		cc.Close()
+		rootConn.Close()
+		nobodyConn.Close()
 		l.Close()
 	}
 }
 
-func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testCreateGet(t *testing.T, rootClient api.BookingServiceClient,
+	nobodyClient api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	want := &api.Booking{
 		UUID:      uuid.New().String(),
@@ -111,10 +122,12 @@ func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
 		EndDate:   "2023-01-23",
 	}
 
-	_, err := client.CreateBooking(ctx, &api.CreateBookingRequest{Booking: want})
+	_, err := rootClient.CreateBooking(ctx,
+		&api.CreateBookingRequest{Booking: want})
 	require.NoError(t, err)
 
-	got, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: want.UUID})
+	got, err := rootClient.GetBooking(
+		ctx, &api.GetBookingRequest{Uuid: want.UUID})
 	require.NoError(t, err)
 	require.Equal(t, want.UUID, got.Booking.UUID)
 	require.Equal(t, want.Email, got.Booking.Email)
@@ -124,20 +137,24 @@ func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
 	require.Equal(t, true, got.Booking.Active)
 }
 
-func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
+	nobodyClient api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
 
-	_, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
+	_, err := rootClient.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), fmt.Sprintf("no booking found for UUID: %s", u))
+	assert.Contains(t, err.Error(),
+		fmt.Sprintf("no booking found for UUID: %s", u))
 }
 
-func testInsecureGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testInsecureGetNonExisting(t *testing.T, rootClient api.BookingServiceClient,
+	nobodyClient api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
 
-	_, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
+	_, err := rootClient.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "connection error: desc = \"error reading server preface: EOF\"")
+	assert.Contains(t, err.Error(),
+		"connection error: desc = \"error reading server preface: EOF\"")
 }
