@@ -44,7 +44,7 @@ gencert:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test -race ./... -v -debug=true
 
 .PHONY: compile
 compile:
