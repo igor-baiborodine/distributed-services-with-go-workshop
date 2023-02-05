@@ -1,7 +1,8 @@
-// START:types
 syntax = "proto3";
 
 package campsite.v1;
+
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/igor-baiborodine/api/campsite_v1";
 
@@ -12,5 +13,6 @@ message Booking {
   string StartDate = 4;
   string EndDate = 5;
   bool   Active = 6;
+  google.protobuf.Timestamp CreatedAt = 7;
+  google.protobuf.Timestamp UpdatedAt = 8;
 }
-// END:types
