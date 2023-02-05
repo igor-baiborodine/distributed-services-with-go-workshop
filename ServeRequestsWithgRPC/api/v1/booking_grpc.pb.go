@@ -24,6 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 type BookingServiceClient interface {
 	GetBooking(ctx context.Context, in *GetBookingRequest, opts ...grpc.CallOption) (*GetBookingResponse, error)
 	CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*CreateBookingResponse, error)
+	UpdateBooking(ctx context.Context, in *UpdateBookingRequest, opts ...grpc.CallOption) (*UpdateBookingResponse, error)
+	GetBookingStream(ctx context.Context, in *GetBookingRequest, opts ...grpc.CallOption) (BookingService_GetBookingStreamClient, error)
+	CreateBookingStream(ctx context.Context, opts ...grpc.CallOption) (BookingService_CreateBookingStreamClient, error)
 }
 
 type bookingServiceClient struct {
@@ -52,12 +55,87 @@ func (c *bookingServiceClient) CreateBooking(ctx context.Context, in *CreateBook
 	return out, nil
 }
 
+func (c *bookingServiceClient) UpdateBooking(ctx context.Context, in *UpdateBookingRequest, opts ...grpc.CallOption) (*UpdateBookingResponse, error) {
+	out := new(UpdateBookingResponse)
+	err := c.cc.Invoke(ctx, "/booking.v1.BookingService/UpdateBooking", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookingServiceClient) GetBookingStream(ctx context.Context, in *GetBookingRequest, opts ...grpc.CallOption) (BookingService_GetBookingStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &BookingService_ServiceDesc.Streams[0], "/booking.v1.BookingService/GetBookingStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &bookingServiceGetBookingStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type BookingService_GetBookingStreamClient interface {
+	Recv() (*GetBookingResponse, error)
+	grpc.ClientStream
+}
+
+type bookingServiceGetBookingStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *bookingServiceGetBookingStreamClient) Recv() (*GetBookingResponse, error) {
+	m := new(GetBookingResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *bookingServiceClient) CreateBookingStream(ctx context.Context, opts ...grpc.CallOption) (BookingService_CreateBookingStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &BookingService_ServiceDesc.Streams[1], "/booking.v1.BookingService/CreateBookingStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &bookingServiceCreateBookingStreamClient{stream}
+	return x, nil
+}
+
+type BookingService_CreateBookingStreamClient interface {
+	Send(*CreateBookingRequest) error
+	Recv() (*CreateBookingResponse, error)
+	grpc.ClientStream
+}
+
+type bookingServiceCreateBookingStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *bookingServiceCreateBookingStreamClient) Send(m *CreateBookingRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *bookingServiceCreateBookingStreamClient) Recv() (*CreateBookingResponse, error) {
+	m := new(CreateBookingResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BookingServiceServer is the server API for BookingService service.
 // All implementations must embed UnimplementedBookingServiceServer
 // for forward compatibility
 type BookingServiceServer interface {
 	GetBooking(context.Context, *GetBookingRequest) (*GetBookingResponse, error)
 	CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error)
+	UpdateBooking(context.Context, *UpdateBookingRequest) (*UpdateBookingResponse, error)
+	GetBookingStream(*GetBookingRequest, BookingService_GetBookingStreamServer) error
+	CreateBookingStream(BookingService_CreateBookingStreamServer) error
 	mustEmbedUnimplementedBookingServiceServer()
 }
 
@@ -70,6 +148,15 @@ func (UnimplementedBookingServiceServer) GetBooking(context.Context, *GetBooking
 }
 func (UnimplementedBookingServiceServer) CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBooking not implemented")
+}
+func (UnimplementedBookingServiceServer) UpdateBooking(context.Context, *UpdateBookingRequest) (*UpdateBookingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBooking not implemented")
+}
+func (UnimplementedBookingServiceServer) GetBookingStream(*GetBookingRequest, BookingService_GetBookingStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetBookingStream not implemented")
+}
+func (UnimplementedBookingServiceServer) CreateBookingStream(BookingService_CreateBookingStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreateBookingStream not implemented")
 }
 func (UnimplementedBookingServiceServer) mustEmbedUnimplementedBookingServiceServer() {}
 
@@ -120,6 +207,71 @@ func _BookingService_CreateBooking_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BookingService_UpdateBooking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookingServiceServer).UpdateBooking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/booking.v1.BookingService/UpdateBooking",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookingServiceServer).UpdateBooking(ctx, req.(*UpdateBookingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookingService_GetBookingStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetBookingRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BookingServiceServer).GetBookingStream(m, &bookingServiceGetBookingStreamServer{stream})
+}
+
+type BookingService_GetBookingStreamServer interface {
+	Send(*GetBookingResponse) error
+	grpc.ServerStream
+}
+
+type bookingServiceGetBookingStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *bookingServiceGetBookingStreamServer) Send(m *GetBookingResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _BookingService_CreateBookingStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(BookingServiceServer).CreateBookingStream(&bookingServiceCreateBookingStreamServer{stream})
+}
+
+type BookingService_CreateBookingStreamServer interface {
+	Send(*CreateBookingResponse) error
+	Recv() (*CreateBookingRequest, error)
+	grpc.ServerStream
+}
+
+type bookingServiceCreateBookingStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *bookingServiceCreateBookingStreamServer) Send(m *CreateBookingResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *bookingServiceCreateBookingStreamServer) Recv() (*CreateBookingRequest, error) {
+	m := new(CreateBookingRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BookingService_ServiceDesc is the grpc.ServiceDesc for BookingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -135,7 +287,23 @@ var BookingService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CreateBooking",
 			Handler:    _BookingService_CreateBooking_Handler,
 		},
+		{
+			MethodName: "UpdateBooking",
+			Handler:    _BookingService_UpdateBooking_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetBookingStream",
+			Handler:       _BookingService_GetBookingStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CreateBookingStream",
+			Handler:       _BookingService_CreateBookingStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "api/v1/booking.proto",
 }

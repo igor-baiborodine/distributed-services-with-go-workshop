@@ -2,11 +2,17 @@ syntax = "proto3";
 
 package booking.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/igor-baiborodine/api/booking_v1";
 
 service BookingService {
   rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
   rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
+  rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse) {}
+  rpc GetBookingStream(GetBookingRequest) returns (stream GetBookingResponse) {}
+  rpc CreateBookingStream(stream CreateBookingRequest) returns
+    (stream CreateBookingResponse) {}
 }
 
 message GetBookingRequest {
@@ -24,6 +30,14 @@ message CreateBookingResponse {
   Booking booking = 1;
 }
 
+message UpdateBookingRequest {
+  Booking booking = 1;
+}
+
+message UpdateBookingResponse {
+  Booking booking = 1;
+}
+
 message Booking {
   string UUID = 1;
   string Email = 2;
@@ -31,4 +45,6 @@ message Booking {
   string StartDate = 4;
   string EndDate = 5;
   bool   Active = 6;
+  google.protobuf.Timestamp CreatedAt = 7;
+  google.protobuf.Timestamp UpdatedAt = 8;
 }

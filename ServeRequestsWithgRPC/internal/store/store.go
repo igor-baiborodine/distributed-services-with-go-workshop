@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 	"golang.org/x/exp/slices"
+
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 )
 
 type BookingStore struct {
@@ -17,19 +18,33 @@ func NewBookingStore() (*BookingStore, error) {
 	return &BookingStore{}, nil
 }
 
-func (c *BookingStore) GetByUUID(uuid string) (model.Booking, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	idx := slices.IndexFunc(c.bookings, func(b model.Booking) bool { return b.UUID == uuid })
+func (s *BookingStore) GetByUUID(uuid string) (model.Booking, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	idx := slices.IndexFunc(s.bookings, func(b model.Booking) bool {
+		return b.UUID == uuid
+	})
 	if idx == -1 {
 		return model.Booking{}, fmt.Errorf("booking not found")
 	}
-	return c.bookings[idx], nil
+	return s.bookings[idx], nil
 }
 
-func (c *BookingStore) Create(b model.Booking) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.bookings = append(c.bookings, b)
+func (s *BookingStore) Create(b model.Booking) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.bookings = append(s.bookings, b)
+	return nil
+}
+
+func (s *BookingStore) Update(b model.Booking) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	idx := slices.IndexFunc(s.bookings,
+		func(eb model.Booking) bool { return eb.UUID == b.UUID })
+	s.bookings[idx] = b
 	return nil
 }

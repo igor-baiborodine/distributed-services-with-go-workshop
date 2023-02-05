@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"time"
+
+	"google.golang.org/grpc"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/model"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/store"
-	"google.golang.org/grpc"
 )
 
 type Config struct {
@@ -55,6 +57,7 @@ func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequ
 		StartDate: req.GetBooking().StartDate,
 		EndDate:   req.GetBooking().EndDate,
 		Active:    true,
+		CreatedAt: time.Now(),
 	}
 	err := s.BookingStore.Create(b)
 	if err != nil {
@@ -63,7 +66,34 @@ func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequ
 	return &api.CreateBookingResponse{Booking: b.ProtoBooking()}, nil
 }
 
+func (s *grpcServer) UpdateBooking(_ context.Context,
+	req *api.UpdateBookingRequest) (
+	*api.UpdateBookingResponse, error) {
+
+	eb, err := s.BookingStore.GetByUUID(req.GetBooking().UUID)
+	if err != nil {
+		return nil, api.ErrUpdateBooking{Booking: req.GetBooking()}
+	}
+
+	b := model.Booking{
+		UUID:      req.GetBooking().UUID,
+		Email:     req.GetBooking().Email,
+		FullName:  req.GetBooking().FullName,
+		StartDate: req.GetBooking().StartDate,
+		EndDate:   req.GetBooking().EndDate,
+		Active:    true,
+		CreatedAt: eb.CreatedAt,
+		UpdatedAt: time.Now(),
+	}
+	err = s.BookingStore.Update(b)
+	if err != nil {
+		return nil, api.ErrUpdateBooking{Booking: req.GetBooking()}
+	}
+	return &api.UpdateBookingResponse{Booking: b.ProtoBooking()}, nil
+}
+
 type BookingStore interface {
 	GetByUUID(uuid string) (model.Booking, error)
 	Create(b model.Booking) error
+	Update(b model.Booking) error
 }

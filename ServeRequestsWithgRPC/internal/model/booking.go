@@ -2,6 +2,9 @@ package model
 
 import (
 	"fmt"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 )
@@ -14,6 +17,8 @@ type Booking struct {
 	StartDate string
 	EndDate   string
 	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // ProtoBooking creates booking proto from Booking model
@@ -25,10 +30,13 @@ func (b *Booking) ProtoBooking() *api.Booking {
 		StartDate: b.StartDate,
 		EndDate:   b.EndDate,
 		Active:    b.Active,
+		CreatedAt: timestamppb.New(b.CreatedAt),
+		UpdatedAt: timestamppb.New(b.UpdatedAt),
 	}
 }
 
 func (b Booking) String() string {
-	return fmt.Sprintf("Booking(%s, %s, %s, %s, %s, %t)",
-		b.UUID, b.Email, b.FullName, b.StartDate, b.EndDate, b.Active)
+	return fmt.Sprintf("Booking(%s, %s, %s, %s, %s, %t, %v, %v)",
+		b.UUID, b.Email, b.FullName, b.StartDate, b.EndDate, b.Active,
+		b.CreatedAt, b.UpdatedAt)
 }
