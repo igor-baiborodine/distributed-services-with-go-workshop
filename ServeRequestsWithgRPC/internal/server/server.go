@@ -38,11 +38,22 @@ func NewGRPCServer(config *Config) (*grpc.Server, error) {
 	return gsrv, nil
 }
 
-func (s *grpcServer) GetBooking(_ context.Context, req *api.GetBookingRequest) (
+func (s *grpcServer) GetBookingByUUID(_ context.Context,
+	req *api.GetByUUIDBookingRequest) (
 	*api.GetBookingResponse, error) {
-	b, err := s.BookingStore.GetByUUID(req.Uuid)
+	b, err := s.BookingStore.GetByUUID(req.UUID)
 	if err != nil {
-		return nil, api.ErrBookingNotFound{UUID: req.GetUuid()}
+		return nil, api.ErrBookingNotFound{UUID: req.GetUUID()}
+	}
+	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
+}
+
+func (s *grpcServer) GetBookingByID(_ context.Context,
+	req *api.GetByIDBookingRequest) (
+	*api.GetBookingResponse, error) {
+	b, err := s.BookingStore.GetByID(int(req.ID))
+	if err != nil {
+		return nil, api.ErrBookingNotFound{ID: int(req.ID)}
 	}
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
@@ -92,8 +103,52 @@ func (s *grpcServer) UpdateBooking(_ context.Context,
 	return &api.UpdateBookingResponse{Booking: b.ProtoBooking()}, nil
 }
 
+func (s *grpcServer) CreateBookingStream(
+	stream api.BookingService_CreateBookingStreamServer,
+) error {
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			return err
+		}
+		res, err := s.CreateBooking(stream.Context(), req)
+		if err != nil {
+			return err
+		}
+		if err = stream.Send(res); err != nil {
+			return err
+		}
+	}
+}
+
+func (s *grpcServer) GetBookingStream(
+	req *api.GetByIDBookingRequest,
+	stream api.BookingService_GetBookingStreamServer,
+) error {
+	for {
+		select {
+		case <-stream.Context().Done():
+			return nil
+		default:
+			res, err := s.GetBookingByID(stream.Context(), req)
+			switch err.(type) {
+			case nil:
+			case api.ErrBookingNotFound:
+				continue
+			default:
+				return err
+			}
+			if err = stream.Send(res); err != nil {
+				return err
+			}
+			req.ID++
+		}
+	}
+}
+
 type BookingStore interface {
-	GetByUUID(uuid string) (model.Booking, error)
+	GetByUUID(UUID string) (model.Booking, error)
+	GetByID(ID int) (model.Booking, error)
 	Create(b model.Booking) error
 	Update(b model.Booking) error
 }

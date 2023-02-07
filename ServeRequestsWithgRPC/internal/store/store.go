@@ -18,12 +18,12 @@ func NewBookingStore() (*BookingStore, error) {
 	return &BookingStore{}, nil
 }
 
-func (s *BookingStore) GetByUUID(uuid string) (model.Booking, error) {
+func (s *BookingStore) GetByUUID(UUID string) (model.Booking, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	idx := slices.IndexFunc(s.bookings, func(b model.Booking) bool {
-		return b.UUID == uuid
+	idx := s.reverseIndexFunc(func(b model.Booking) bool {
+		return b.UUID == UUID
 	})
 	if idx == -1 {
 		return model.Booking{}, fmt.Errorf("booking not found")
@@ -31,20 +31,40 @@ func (s *BookingStore) GetByUUID(uuid string) (model.Booking, error) {
 	return s.bookings[idx], nil
 }
 
-func (s *BookingStore) Create(b model.Booking) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.bookings = append(s.bookings, b)
-	return nil
-}
-
-func (s *BookingStore) Update(b model.Booking) error {
+func (s *BookingStore) GetByID(ID int) (model.Booking, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	idx := slices.IndexFunc(s.bookings,
-		func(eb model.Booking) bool { return eb.UUID == b.UUID })
-	s.bookings[idx] = b
+		func(b model.Booking) bool { return b.ID == ID })
+	if idx == -1 {
+		return model.Booking{}, fmt.Errorf("booking not found")
+	}
+	return s.bookings[idx], nil
+}
+
+func (s *BookingStore) Create(b model.Booking) error {
+	return s.appendBooking(b)
+}
+
+func (s *BookingStore) Update(b model.Booking) error {
+	return s.appendBooking(b)
+}
+
+func (s *BookingStore) appendBooking(b model.Booking) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	b.ID = len(s.bookings) + 1
+	s.bookings = append(s.bookings, b)
 	return nil
+}
+
+func (s *BookingStore) reverseIndexFunc(f func(model.Booking) bool) int {
+	for i := len(s.bookings) - 1; i >= 0; i-- {
+		if f(s.bookings[i]) {
+			return i
+		}
+	}
+	return -1
 }

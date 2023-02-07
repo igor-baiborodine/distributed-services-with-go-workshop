@@ -8,6 +8,7 @@ import (
 )
 
 type ErrBookingNotFound struct {
+	ID   int
 	UUID string
 }
 

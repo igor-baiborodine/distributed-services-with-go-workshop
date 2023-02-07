@@ -11,6 +11,7 @@ import (
 
 // Booking model
 type Booking struct {
+	ID        int
 	UUID      string
 	Email     string
 	FullName  string
@@ -24,6 +25,7 @@ type Booking struct {
 // ProtoBooking creates booking proto from Booking model
 func (b *Booking) ProtoBooking() *api.Booking {
 	return &api.Booking{
+		// ID:        int64(b.ID),
 		UUID:      b.UUID,
 		Email:     b.Email,
 		FullName:  b.FullName,
@@ -36,7 +38,7 @@ func (b *Booking) ProtoBooking() *api.Booking {
 }
 
 func (b Booking) String() string {
-	return fmt.Sprintf("Booking(%s, %s, %s, %s, %s, %t, %v, %v)",
-		b.UUID, b.Email, b.FullName, b.StartDate, b.EndDate, b.Active,
+	return fmt.Sprintf("Booking(%d, %s, %s, %s, %s, %s, %t, %v, %v)",
+		b.ID, b.UUID, b.Email, b.FullName, b.StartDate, b.EndDate, b.Active,
 		b.CreatedAt, b.UpdatedAt)
 }

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/store"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/store"
 )
 
 func TestServer(t *testing.T) {
@@ -82,8 +83,10 @@ func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
 	_, err := client.CreateBooking(ctx, &api.CreateBookingRequest{Booking: want})
 	require.NoError(t, err)
 
-	got, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: want.UUID})
+	got, err := client.GetBookingByUUID(ctx,
+		&api.GetByUUIDBookingRequest{UUID: want.UUID})
 	require.NoError(t, err)
+	require.Equal(t, int64(0), got.Booking.ID)
 	require.Equal(t, want.UUID, got.Booking.UUID)
 	require.Equal(t, want.Email, got.Booking.Email)
 	require.Equal(t, want.FullName, got.Booking.FullName)
@@ -95,7 +98,6 @@ func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
 func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
-
-	_, err := client.GetBooking(ctx, &api.GetBookingRequest{Uuid: u})
+	_, err := client.GetBookingByUUID(ctx, &api.GetByUUIDBookingRequest{UUID: u})
 	require.Errorf(t, err, "no booking found for UUID: %s", u)
 }
