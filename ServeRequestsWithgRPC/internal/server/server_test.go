@@ -99,6 +99,7 @@ func testCreateUpdate(t *testing.T, client api.BookingServiceClient,
 	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
 	want.FullName = "Jack Jones"
+	want.Email = "jack.jones@dot.com"
 
 	got, err := client.UpdateBooking(ctx,
 		&api.UpdateBookingRequest{Booking: want})
