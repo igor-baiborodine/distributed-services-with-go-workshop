@@ -43,7 +43,7 @@ func (s *grpcServer) GetBookingByUUID(_ context.Context,
 	*api.GetBookingResponse, error) {
 	b, err := s.BookingStore.GetByUUID(req.UUID)
 	if err != nil {
-		return nil, api.ErrBookingNotFound{UUID: req.GetUUID()}
+		return nil, api.NewErrBookingNotFoundForUUID(req.UUID).ErrBooking
 	}
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
@@ -53,7 +53,7 @@ func (s *grpcServer) GetBookingByID(_ context.Context,
 	*api.GetBookingResponse, error) {
 	b, err := s.BookingStore.GetByID(int(req.ID))
 	if err != nil {
-		return nil, api.ErrBookingNotFound{ID: int(req.ID)}
+		return nil, api.NewErrBookingNotFoundForID(int(req.ID)).ErrBooking
 	}
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
@@ -62,17 +62,17 @@ func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequ
 	*api.CreateBookingResponse, error) {
 
 	b := model.Booking{
-		UUID:      req.GetBooking().UUID,
-		Email:     req.GetBooking().Email,
-		FullName:  req.GetBooking().FullName,
-		StartDate: req.GetBooking().StartDate,
-		EndDate:   req.GetBooking().EndDate,
+		UUID:      req.Booking.UUID,
+		Email:     req.Booking.Email,
+		FullName:  req.Booking.FullName,
+		StartDate: req.Booking.StartDate,
+		EndDate:   req.Booking.EndDate,
 		Active:    true,
 		CreatedAt: time.Now(),
 	}
 	err := s.BookingStore.Create(b)
 	if err != nil {
-		return nil, api.ErrCreateBooking{Booking: req.GetBooking()}
+		return nil, api.NewErrCreateBooking(req.Booking).ErrBooking
 	}
 	return &api.CreateBookingResponse{Booking: b.ProtoBooking()}, nil
 }
@@ -81,24 +81,24 @@ func (s *grpcServer) UpdateBooking(_ context.Context,
 	req *api.UpdateBookingRequest) (
 	*api.UpdateBookingResponse, error) {
 
-	eb, err := s.BookingStore.GetByUUID(req.GetBooking().UUID)
+	eb, err := s.BookingStore.GetByUUID(req.Booking.UUID)
 	if err != nil {
-		return nil, api.ErrUpdateBooking{Booking: req.GetBooking()}
+		return nil, api.NewErrUpdateBooking(req.Booking).ErrBooking
 	}
 
 	b := model.Booking{
-		UUID:      req.GetBooking().UUID,
-		Email:     req.GetBooking().Email,
-		FullName:  req.GetBooking().FullName,
-		StartDate: req.GetBooking().StartDate,
-		EndDate:   req.GetBooking().EndDate,
+		UUID:      req.Booking.UUID,
+		Email:     req.Booking.Email,
+		FullName:  req.Booking.FullName,
+		StartDate: req.Booking.StartDate,
+		EndDate:   req.Booking.EndDate,
 		Active:    true,
 		CreatedAt: eb.CreatedAt,
 		UpdatedAt: time.Now(),
 	}
 	err = s.BookingStore.Update(b)
 	if err != nil {
-		return nil, api.ErrUpdateBooking{Booking: req.GetBooking()}
+		return nil, api.NewErrUpdateBooking(req.Booking).ErrBooking
 	}
 	return &api.UpdateBookingResponse{Booking: b.ProtoBooking()}, nil
 }
@@ -133,7 +133,7 @@ func (s *grpcServer) GetBookingStream(
 			res, err := s.GetBookingByID(stream.Context(), req)
 			switch err.(type) {
 			case nil:
-			case api.ErrBookingNotFound:
+			case api.ErrBooking:
 				continue
 			default:
 				return err
