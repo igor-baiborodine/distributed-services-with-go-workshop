@@ -72,7 +72,8 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	}
 }
 
-func testCreateGetByUUID(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testCreateGetByUUID(t *testing.T, client api.BookingServiceClient,
+	config *Config) {
 	ctx := context.Background()
 	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
@@ -83,7 +84,8 @@ func testCreateGetByUUID(t *testing.T, client api.BookingServiceClient, _ *Confi
 	assertBooking(t, want, got.Booking)
 }
 
-func testCreateGetByID(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testCreateGetByID(t *testing.T, client api.BookingServiceClient,
+	config *Config) {
 	ctx := context.Background()
 	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
@@ -94,7 +96,7 @@ func testCreateGetByID(t *testing.T, client api.BookingServiceClient, _ *Config)
 }
 
 func testCreateUpdate(t *testing.T, client api.BookingServiceClient,
-	_ *Config) {
+	config *Config) {
 	ctx := context.Background()
 	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
@@ -107,7 +109,8 @@ func testCreateUpdate(t *testing.T, client api.BookingServiceClient,
 	assertBooking(t, want, got.Booking)
 }
 
-func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testGetNonExisting(t *testing.T, client api.BookingServiceClient,
+	config *Config) {
 	ctx := context.Background()
 	u := uuid.New().String()
 	_, err := client.GetBookingByUUID(ctx, &api.GetByUUIDBookingRequest{UUID: u})
