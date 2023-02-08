@@ -20,8 +20,10 @@ func TestServer(t *testing.T) {
 		client api.BookingServiceClient,
 		config *Config,
 	){
-		"create/get booking succeeds":    testCreateGet,
-		"get non-existing booking fails": testGetNonExisting,
+		"create and get by UUID booking succeeds": testCreateGetByUUID,
+		"create and get by ID booking succeeds":   testCreateGetByID,
+		"create and update booking succeeds":      testCreateUpdate,
+		"get non-existing booking fails":          testGetNonExisting,
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			client, config, teardown := setupTest(t, nil)
@@ -70,29 +72,38 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	}
 }
 
-func testCreateGet(t *testing.T, client api.BookingServiceClient, _ *Config) {
+func testCreateGetByUUID(t *testing.T, client api.BookingServiceClient, _ *Config) {
 	ctx := context.Background()
-	want := &api.Booking{
-		UUID:      uuid.New().String(),
-		Email:     "john.smith@dot.com",
-		FullName:  "John Smith",
-		StartDate: "2023-01-20",
-		EndDate:   "2023-01-23",
-	}
-
-	_, err := client.CreateBooking(ctx, &api.CreateBookingRequest{Booking: want})
+	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
 
 	got, err := client.GetBookingByUUID(ctx,
 		&api.GetByUUIDBookingRequest{UUID: want.UUID})
 	require.NoError(t, err)
-	require.Equal(t, int64(0), got.Booking.ID)
-	require.Equal(t, want.UUID, got.Booking.UUID)
-	require.Equal(t, want.Email, got.Booking.Email)
-	require.Equal(t, want.FullName, got.Booking.FullName)
-	require.Equal(t, want.StartDate, got.Booking.StartDate)
-	require.Equal(t, want.EndDate, got.Booking.EndDate)
-	require.Equal(t, true, got.Booking.Active)
+	assertBooking(t, want, got.Booking)
+}
+
+func testCreateGetByID(t *testing.T, client api.BookingServiceClient, _ *Config) {
+	ctx := context.Background()
+	want, err := createBooking(client, ctx)
+	require.NoError(t, err)
+
+	got, err := client.GetBookingByID(ctx, &api.GetByIDBookingRequest{ID: 1})
+	require.NoError(t, err)
+	assertBooking(t, want, got.Booking)
+}
+
+func testCreateUpdate(t *testing.T, client api.BookingServiceClient,
+	_ *Config) {
+	ctx := context.Background()
+	want, err := createBooking(client, ctx)
+	require.NoError(t, err)
+	want.FullName = "Jack Jones"
+
+	got, err := client.UpdateBooking(ctx,
+		&api.UpdateBookingRequest{Booking: want})
+	require.NoError(t, err)
+	assertBooking(t, want, got.Booking)
 }
 
 func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config) {
@@ -100,4 +111,30 @@ func testGetNonExisting(t *testing.T, client api.BookingServiceClient, _ *Config
 	u := uuid.New().String()
 	_, err := client.GetBookingByUUID(ctx, &api.GetByUUIDBookingRequest{UUID: u})
 	require.Errorf(t, err, "no booking found for UUID: %s", u)
+}
+
+func createBooking(client api.BookingServiceClient,
+	ctx context.Context) (*api.Booking, error) {
+	want := &api.Booking{
+		UUID:      uuid.New().String(),
+		Email:     "john.smith@dot.com",
+		FullName:  "John Smith",
+		StartDate: "2023-01-20",
+		EndDate:   "2023-01-23",
+	}
+	_, err := client.CreateBooking(ctx,
+		&api.CreateBookingRequest{Booking: want})
+	want.ID = 0
+	want.Active = true
+	return want, err
+}
+
+func assertBooking(t *testing.T, want *api.Booking, got *api.Booking) {
+	require.Equal(t, want.ID, got.ID)
+	require.Equal(t, want.UUID, got.UUID)
+	require.Equal(t, want.Email, got.Email)
+	require.Equal(t, want.FullName, got.FullName)
+	require.Equal(t, want.StartDate, got.StartDate)
+	require.Equal(t, want.EndDate, got.EndDate)
+	require.Equal(t, want.Active, got.Active)
 }
