@@ -23,6 +23,7 @@ func TestServer(t *testing.T) {
 		"create and get by UUID booking succeeds": testCreateGetByUUID,
 		"create and get by ID booking succeeds":   testCreateGetByID,
 		"create and update booking succeeds":      testCreateUpdate,
+		"create and get booking stream succeeds":  testCreateGetBookingStream,
 		"get non-existing booking fails":          testGetNonExisting,
 	} {
 		t.Run(scenario, func(t *testing.T) {
@@ -100,12 +101,13 @@ func testCreateUpdate(t *testing.T, client api.BookingServiceClient,
 	ctx := context.Background()
 	want, err := createBooking(client, ctx)
 	require.NoError(t, err)
-	want.FullName = "Jack Jones"
-	want.Email = "jack.jones@dot.com"
+	want.StartDate = "2023-02-15"
+	want.EndDate = "2023-02-18"
 
 	got, err := client.UpdateBooking(ctx,
 		&api.UpdateBookingRequest{Booking: want})
 	require.NoError(t, err)
+	want.ID++
 	assertBooking(t, want, got.Booking)
 }
 
@@ -117,20 +119,67 @@ func testGetNonExisting(t *testing.T, client api.BookingServiceClient,
 	require.Errorf(t, err, "no booking found for UUID: %s", u)
 }
 
+func testCreateGetBookingStream(t *testing.T, client api.BookingServiceClient,
+	config *Config) {
+	booking1 := createBookingProto(1, "john.smith@dot.com", "John Smith",
+		"2023-01-20", "2023-01-23")
+	booking2 := createBookingProto(2, "jack.jones@dot.com", "Jack Jones",
+		"2023-01-27", "2023-01-30")
+	booking3 := createBookingProto(3, "robert.brown@dot.com", "Robert Brown",
+		"2023-02-11", "2023-02-15")
+
+	var bookings = []*api.Booking{booking1, booking2, booking3}
+	ctx := context.Background()
+
+	{
+		stream, err := client.CreateBookingStream(ctx)
+		require.NoError(t, err)
+
+		for i, b := range bookings {
+			err = stream.Send(&api.CreateBookingRequest{Booking: b})
+			require.NoError(t, err)
+			res, err := stream.Recv()
+			require.NoError(t, err)
+
+			if res.Booking.ID != uint64(i+1) {
+				t.Fatalf("got ID: %d, want: %d", res.Booking.ID, i+1)
+			}
+		}
+	}
+
+	{
+		stream, err := client.GetBookingStream(
+			ctx, &api.GetByIDBookingRequest{ID: 1})
+		require.NoError(t, err)
+
+		for _, b := range bookings {
+			res, err := stream.Recv()
+			require.NoError(t, err)
+			assertBooking(t, b, res.Booking)
+		}
+	}
+}
+
 func createBooking(client api.BookingServiceClient,
 	ctx context.Context) (*api.Booking, error) {
-	want := &api.Booking{
-		UUID:      uuid.New().String(),
-		Email:     "john.smith@dot.com",
-		FullName:  "John Smith",
-		StartDate: "2023-01-20",
-		EndDate:   "2023-01-23",
-	}
+	b := createBookingProto(1, "john.smith@dot.com", "John Smith",
+		"2023-01-20", "2023-01-23")
 	_, err := client.CreateBooking(ctx,
-		&api.CreateBookingRequest{Booking: want})
-	want.ID = 0
-	want.Active = true
-	return want, err
+		&api.CreateBookingRequest{Booking: b})
+	return b, err
+}
+
+func createBookingProto(id uint64, email string, fullname string,
+	startDate string, endDate string) *api.Booking {
+	return &api.Booking{
+		ID:        id,
+		UUID:      uuid.New().String(),
+		Email:     email,
+		FullName:  fullname,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Active:    true,
+	}
 }
 
 func assertBooking(t *testing.T, want *api.Booking, got *api.Booking) {

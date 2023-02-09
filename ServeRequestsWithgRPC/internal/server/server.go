@@ -39,8 +39,8 @@ func NewGRPCServer(config *Config) (*grpc.Server, error) {
 }
 
 func (s *grpcServer) GetBookingByUUID(_ context.Context,
-	req *api.GetByUUIDBookingRequest) (
-	*api.GetBookingResponse, error) {
+	req *api.GetByUUIDBookingRequest) (*api.GetBookingResponse, error) {
+
 	b, err := s.BookingStore.GetByUUID(req.UUID)
 	if err != nil {
 		return nil, api.NewErrBookingNotFoundForUUID(req.UUID).ErrBooking
@@ -49,17 +49,17 @@ func (s *grpcServer) GetBookingByUUID(_ context.Context,
 }
 
 func (s *grpcServer) GetBookingByID(_ context.Context,
-	req *api.GetByIDBookingRequest) (
-	*api.GetBookingResponse, error) {
-	b, err := s.BookingStore.GetByID(int(req.ID))
+	req *api.GetByIDBookingRequest) (*api.GetBookingResponse, error) {
+
+	b, err := s.BookingStore.GetByID(req.ID)
 	if err != nil {
-		return nil, api.NewErrBookingNotFoundForID(int(req.ID)).ErrBooking
+		return nil, api.NewErrBookingNotFoundForID(req.ID).ErrBooking
 	}
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
 
-func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequest) (
-	*api.CreateBookingResponse, error) {
+func (s *grpcServer) CreateBooking(_ context.Context,
+	req *api.CreateBookingRequest) (*api.CreateBookingResponse, error) {
 
 	b := model.Booking{
 		UUID:      req.Booking.UUID,
@@ -70,16 +70,15 @@ func (s *grpcServer) CreateBooking(_ context.Context, req *api.CreateBookingRequ
 		Active:    true,
 		CreatedAt: time.Now(),
 	}
-	err := s.BookingStore.Create(b)
+	cb, err := s.BookingStore.Create(b)
 	if err != nil {
 		return nil, api.NewErrCreateBooking(req.Booking).ErrBooking
 	}
-	return &api.CreateBookingResponse{Booking: b.ProtoBooking()}, nil
+	return &api.CreateBookingResponse{Booking: cb.ProtoBooking()}, nil
 }
 
 func (s *grpcServer) UpdateBooking(_ context.Context,
-	req *api.UpdateBookingRequest) (
-	*api.UpdateBookingResponse, error) {
+	req *api.UpdateBookingRequest) (*api.UpdateBookingResponse, error) {
 
 	eb, err := s.BookingStore.GetByUUID(req.Booking.UUID)
 	if err != nil {
@@ -96,16 +95,15 @@ func (s *grpcServer) UpdateBooking(_ context.Context,
 		CreatedAt: eb.CreatedAt,
 		UpdatedAt: time.Now(),
 	}
-	err = s.BookingStore.Update(b)
+	ub, err := s.BookingStore.Update(b)
 	if err != nil {
 		return nil, api.NewErrUpdateBooking(req.Booking).ErrBooking
 	}
-	return &api.UpdateBookingResponse{Booking: b.ProtoBooking()}, nil
+	return &api.UpdateBookingResponse{Booking: ub.ProtoBooking()}, nil
 }
 
 func (s *grpcServer) CreateBookingStream(
-	stream api.BookingService_CreateBookingStreamServer,
-) error {
+	stream api.BookingService_CreateBookingStreamServer) error {
 	for {
 		req, err := stream.Recv()
 		if err != nil {
@@ -121,10 +119,8 @@ func (s *grpcServer) CreateBookingStream(
 	}
 }
 
-func (s *grpcServer) GetBookingStream(
-	req *api.GetByIDBookingRequest,
-	stream api.BookingService_GetBookingStreamServer,
-) error {
+func (s *grpcServer) GetBookingStream(req *api.GetByIDBookingRequest,
+	stream api.BookingService_GetBookingStreamServer) error {
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -148,7 +144,7 @@ func (s *grpcServer) GetBookingStream(
 
 type BookingStore interface {
 	GetByUUID(UUID string) (model.Booking, error)
-	GetByID(ID int) (model.Booking, error)
+	GetByID(ID uint64) (model.Booking, error)
 	Create(b model.Booking) error
 	Update(b model.Booking) error
 }

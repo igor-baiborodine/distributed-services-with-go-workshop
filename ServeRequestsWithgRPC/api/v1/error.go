@@ -48,7 +48,7 @@ func (e ErrBooking) Error() string {
 	return e.GRPCStatus().Err().Error()
 }
 
-func NewErrBookingNotFoundForID(id int) *ErrBookingNotFoundForID {
+func NewErrBookingNotFoundForID(id uint64) *ErrBookingNotFoundForID {
 	return &ErrBookingNotFoundForID{
 		ErrBooking: &ErrBooking{
 			Code: 404,

@@ -11,7 +11,7 @@ import (
 
 // Booking model
 type Booking struct {
-	ID        int
+	ID        uint64
 	UUID      string
 	Email     string
 	FullName  string
@@ -25,7 +25,7 @@ type Booking struct {
 // ProtoBooking creates booking proto from Booking model
 func (b *Booking) ProtoBooking() *api.Booking {
 	return &api.Booking{
-		// ID:        int64(b.ID),
+		ID:        b.ID,
 		UUID:      b.UUID,
 		Email:     b.Email,
 		FullName:  b.FullName,

@@ -31,7 +31,7 @@ func (s *BookingStore) GetByUUID(UUID string) (model.Booking, error) {
 	return s.bookings[idx], nil
 }
 
-func (s *BookingStore) GetByID(ID int) (model.Booking, error) {
+func (s *BookingStore) GetByID(ID uint64) (model.Booking, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -43,21 +43,21 @@ func (s *BookingStore) GetByID(ID int) (model.Booking, error) {
 	return s.bookings[idx], nil
 }
 
-func (s *BookingStore) Create(b model.Booking) error {
-	return s.appendBooking(b)
+func (s *BookingStore) Create(b model.Booking) (model.Booking, error) {
+	return s.appendBooking(b), nil
 }
 
-func (s *BookingStore) Update(b model.Booking) error {
-	return s.appendBooking(b)
+func (s *BookingStore) Update(b model.Booking) (model.Booking, error) {
+	return s.appendBooking(b), nil
 }
 
-func (s *BookingStore) appendBooking(b model.Booking) error {
+func (s *BookingStore) appendBooking(b model.Booking) model.Booking {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	b.ID = len(s.bookings) + 1
+	b.ID = uint64(len(s.bookings) + 1)
 	s.bookings = append(s.bookings, b)
-	return nil
+	return b
 }
 
 func (s *BookingStore) reverseIndexFunc(f func(model.Booking) bool) int {

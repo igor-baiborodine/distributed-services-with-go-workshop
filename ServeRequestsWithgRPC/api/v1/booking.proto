@@ -21,7 +21,7 @@ message GetByUUIDBookingRequest {
 }
 
 message GetByIDBookingRequest {
-  int64 ID = 1;
+  uint64 ID = 1;
 }
 
 message GetBookingResponse  {
@@ -45,7 +45,7 @@ message UpdateBookingResponse {
 }
 
 message Booking {
-  int64  ID = 1;
+  uint64 ID = 1;
   string UUID = 2;
   string Email = 3;
   string FullName = 4;
