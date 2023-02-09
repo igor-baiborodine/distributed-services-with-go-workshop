@@ -2,16 +2,28 @@ syntax = "proto3";
 
 package booking.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/igor-baiborodine/api/booking_v1";
 
 service BookingService {
-  rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
+  rpc GetBookingByUUID(GetByUUIDBookingRequest) returns (GetBookingResponse) {}
+  rpc GetBookingByID(GetByIDBookingRequest) returns (GetBookingResponse) {}
   rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
+  rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse) {}
+  rpc GetBookingStream(GetByIDBookingRequest) returns (stream GetBookingResponse) {}
+  rpc CreateBookingStream(stream CreateBookingRequest) returns
+    (stream CreateBookingResponse) {}
 }
 
-message GetBookingRequest {
-  string uuid = 1;
+message GetByUUIDBookingRequest {
+  string UUID = 1;
 }
+
+message GetByIDBookingRequest {
+  uint64 ID = 1;
+}
+
 message GetBookingResponse  {
   Booking booking = 1;
 }
@@ -24,11 +36,22 @@ message CreateBookingResponse {
   Booking booking = 1;
 }
 
+message UpdateBookingRequest {
+  Booking booking = 1;
+}
+
+message UpdateBookingResponse {
+  Booking booking = 1;
+}
+
 message Booking {
-  string UUID = 1;
-  string Email = 2;
-  string FullName = 3;
-  string StartDate = 4;
-  string EndDate = 5;
-  bool   Active = 6;
+  uint64 ID = 1;
+  string UUID = 2;
+  string Email = 3;
+  string FullName = 4;
+  string StartDate = 5;
+  string EndDate = 6;
+  bool   Active = 7;
+  google.protobuf.Timestamp CreatedAt = 8;
+  google.protobuf.Timestamp UpdatedAt = 9;
 }

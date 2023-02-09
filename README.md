@@ -14,7 +14,7 @@ the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking)
 - [ ] ~~3.Write a Log Package~~
 - [X] [4.Serve Requests with gRPC](/ServeRequestsWithgRPC)
 - [X] [5.Secure Your Services](/SecureYourServices)
-- [ ] 6.Observe Your Systems
+- [X] 6.Observe Your Systems
 - [ ] 7.Server-to-server Service Discovery
 - [ ] 8.Coordinate Your Services with Consensus
 - [ ] 9.Discover Servers and Load Balance from the Client
