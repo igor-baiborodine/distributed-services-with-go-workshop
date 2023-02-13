@@ -4,20 +4,34 @@ import (
 	"fmt"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type ErrBookingNotFound struct {
-	UUID string
+type ErrBookingNotFoundForID struct {
+	ErrBooking *ErrBooking
+}
+
+type ErrBookingNotFoundForUUID struct {
+	ErrBooking *ErrBooking
 }
 
 type ErrCreateBooking struct {
-	Booking *Booking
+	ErrBooking *ErrBooking
 }
 
-func (e ErrBookingNotFound) GRPCStatus() *status.Status {
-	msg := fmt.Sprintf("no booking found for UUID: %s", e.UUID)
-	st := status.New(404, msg)
+type ErrUpdateBooking struct {
+	ErrBooking *ErrBooking
+}
+
+type ErrBooking struct {
+	Code       codes.Code
+	ErrMsgFunc func() string
+}
+
+func (e ErrBooking) GRPCStatus() *status.Status {
+	msg := e.ErrMsgFunc()
+	st := status.New(e.Code, msg)
 
 	d := &errdetails.LocalizedMessage{
 		Locale:  "en-US",
@@ -30,25 +44,50 @@ func (e ErrBookingNotFound) GRPCStatus() *status.Status {
 	return std
 }
 
-func (e ErrBookingNotFound) Error() string {
+func (e ErrBooking) Error() string {
 	return e.GRPCStatus().Err().Error()
 }
 
-func (e ErrCreateBooking) GRPCStatus() *status.Status {
-	msg := fmt.Sprintf("cannot create booking: %s", e.Booking)
-	st := status.New(400, msg)
-
-	d := &errdetails.LocalizedMessage{
-		Locale:  "en-US",
-		Message: msg,
+func NewErrBookingNotFoundForID(id uint64) *ErrBookingNotFoundForID {
+	return &ErrBookingNotFoundForID{
+		ErrBooking: &ErrBooking{
+			Code: 404,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("no booking found for ID: %d", id)
+			},
+		},
 	}
-	std, err := st.WithDetails(d)
-	if err != nil {
-		return st
-	}
-	return std
 }
 
-func (e ErrCreateBooking) Error() string {
-	return e.GRPCStatus().Err().Error()
+func NewErrBookingNotFoundForUUID(uuid string) *ErrBookingNotFoundForUUID {
+	return &ErrBookingNotFoundForUUID{
+		ErrBooking: &ErrBooking{
+			Code: 404,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("no booking found for UUID: %s", uuid)
+			},
+		},
+	}
+}
+
+func NewErrCreateBooking(b *Booking) *ErrCreateBooking {
+	return &ErrCreateBooking{
+		ErrBooking: &ErrBooking{
+			Code: 400,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("cannot create booking: %s", b)
+			},
+		},
+	}
+}
+
+func NewErrUpdateBooking(b *Booking) *ErrUpdateBooking {
+	return &ErrUpdateBooking{
+		ErrBooking: &ErrBooking{
+			Code: 400,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("cannot update booking: %s", b)
+			},
+		},
+	}
 }
