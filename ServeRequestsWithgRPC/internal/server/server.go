@@ -145,6 +145,6 @@ func (s *grpcServer) GetBookingStream(req *api.GetByIDBookingRequest,
 type BookingStore interface {
 	GetByUUID(UUID string) (model.Booking, error)
 	GetByID(ID uint64) (model.Booking, error)
-	Create(b model.Booking) error
-	Update(b model.Booking) error
+	Create(b model.Booking) (model.Booking, error)
+	Update(b model.Booking) (model.Booking, error)
 }

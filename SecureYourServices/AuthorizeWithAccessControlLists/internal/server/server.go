@@ -2,29 +2,33 @@ package server
 
 import (
 	"context"
+	"time"
 
+	grpcmdwr "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	grpcmdwr "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"google.golang.org/grpc"
-
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/auth"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/model"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/store"
 )
 
 type Config struct {
-	BookingStore BookingStore
-	Authorizer   Authorizer
+	BookingStore *store.BookingStore
+	Authorizer   *auth.Authorizer
 }
 
 const (
-	objectWildcard      = "*"
-	createBookingAction = "createBooking"
-	getBookingAction    = "getBooking"
+	objectWildcard         = "*"
+	getBookingByUUIDAction = "getBookingByUUID"
+	getBookingByIDAction   = "getBookingByID"
+	createBookingAction    = "createBooking"
+	updateBookingAction    = "updateBooking"
 )
 
 type grpcServer struct {
@@ -46,6 +50,8 @@ func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (
 ) {
 	opts = append(opts, grpc.UnaryInterceptor(grpcmdwr.ChainUnaryServer(
 		grpcauth.UnaryServerInterceptor(authenticate),
+	)), grpc.StreamInterceptor(grpcmdwr.ChainStreamServer(
+		grpcauth.StreamServerInterceptor(authenticate),
 	)))
 	gsrv := grpc.NewServer(opts...)
 	srv, err := newgrpcServer(config)
@@ -56,24 +62,43 @@ func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (
 	return gsrv, nil
 }
 
-func (s *grpcServer) GetBooking(ctx context.Context,
-	req *api.GetBookingRequest) (*api.GetBookingResponse, error) {
+func (s *grpcServer) GetBookingByUUID(ctx context.Context,
+	req *api.GetByUUIDBookingRequest) (*api.GetBookingResponse, error) {
+
 	if err := s.Authorizer.Authorize(
 		subject(ctx),
 		objectWildcard,
-		getBookingAction,
+		getBookingByUUIDAction,
 	); err != nil {
 		return nil, err
 	}
-	b, err := s.BookingStore.GetByUUID(req.Uuid)
+	b, err := s.BookingStore.GetByUUID(req.UUID)
 	if err != nil {
-		return nil, api.ErrBookingNotFound{UUID: req.GetUuid()}
+		return nil, api.NewErrBookingNotFoundForUUID(req.UUID).ErrBooking
+	}
+	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
+}
+
+func (s *grpcServer) GetBookingByID(ctx context.Context,
+	req *api.GetByIDBookingRequest) (*api.GetBookingResponse, error) {
+
+	if err := s.Authorizer.Authorize(
+		subject(ctx),
+		objectWildcard,
+		getBookingByIDAction,
+	); err != nil {
+		return nil, err
+	}
+	b, err := s.BookingStore.GetByID(req.ID)
+	if err != nil {
+		return nil, api.NewErrBookingNotFoundForID(req.ID).ErrBooking
 	}
 	return &api.GetBookingResponse{Booking: b.ProtoBooking()}, nil
 }
 
 func (s *grpcServer) CreateBooking(ctx context.Context,
 	req *api.CreateBookingRequest) (*api.CreateBookingResponse, error) {
+
 	if err := s.Authorizer.Authorize(
 		subject(ctx),
 		objectWildcard,
@@ -82,27 +107,98 @@ func (s *grpcServer) CreateBooking(ctx context.Context,
 		return nil, err
 	}
 	b := model.Booking{
-		UUID:      req.GetBooking().UUID,
-		Email:     req.GetBooking().Email,
-		FullName:  req.GetBooking().FullName,
-		StartDate: req.GetBooking().StartDate,
-		EndDate:   req.GetBooking().EndDate,
+		UUID:      req.Booking.UUID,
+		Email:     req.Booking.Email,
+		FullName:  req.Booking.FullName,
+		StartDate: req.Booking.StartDate,
+		EndDate:   req.Booking.EndDate,
 		Active:    true,
+		CreatedAt: time.Now(),
 	}
-	err := s.BookingStore.Create(b)
+	cb, err := s.BookingStore.Create(b)
 	if err != nil {
-		return nil, api.ErrCreateBooking{Booking: req.GetBooking()}
+		return nil, api.NewErrCreateBooking(req.Booking).ErrBooking
 	}
-	return &api.CreateBookingResponse{Booking: b.ProtoBooking()}, nil
+	return &api.CreateBookingResponse{Booking: cb.ProtoBooking()}, nil
+}
+
+func (s *grpcServer) UpdateBooking(ctx context.Context,
+	req *api.UpdateBookingRequest) (*api.UpdateBookingResponse, error) {
+
+	if err := s.Authorizer.Authorize(
+		subject(ctx),
+		objectWildcard,
+		updateBookingAction,
+	); err != nil {
+		return nil, err
+	}
+	eb, err := s.BookingStore.GetByUUID(req.Booking.UUID)
+	if err != nil {
+		return nil, api.NewErrUpdateBooking(req.Booking).ErrBooking
+	}
+
+	b := model.Booking{
+		UUID:      req.Booking.UUID,
+		Email:     req.Booking.Email,
+		FullName:  req.Booking.FullName,
+		StartDate: req.Booking.StartDate,
+		EndDate:   req.Booking.EndDate,
+		Active:    true,
+		CreatedAt: eb.CreatedAt,
+		UpdatedAt: time.Now(),
+	}
+	ub, err := s.BookingStore.Update(b)
+	if err != nil {
+		return nil, api.NewErrUpdateBooking(req.Booking).ErrBooking
+	}
+	return &api.UpdateBookingResponse{Booking: ub.ProtoBooking()}, nil
+}
+
+func (s *grpcServer) CreateBookingStream(
+	stream api.BookingService_CreateBookingStreamServer) error {
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			return err
+		}
+		res, err := s.CreateBooking(stream.Context(), req)
+		if err != nil {
+			return err
+		}
+		if err = stream.Send(res); err != nil {
+			return err
+		}
+	}
+}
+
+func (s *grpcServer) GetBookingStream(req *api.GetByIDBookingRequest,
+	stream api.BookingService_GetBookingStreamServer) error {
+	for {
+		select {
+		case <-stream.Context().Done():
+			return nil
+		default:
+			res, err := s.GetBookingByID(stream.Context(), req)
+			switch err.(type) {
+			case nil:
+			case api.ErrBooking:
+				continue
+			default:
+				return err
+			}
+			if err = stream.Send(res); err != nil {
+				return err
+			}
+			req.ID++
+		}
+	}
 }
 
 type BookingStore interface {
-	GetByUUID(uuid string) (model.Booking, error)
-	Create(b model.Booking) error
-}
-
-type Authorizer interface {
-	Authorize(subject, object, action string) error
+	GetByUUID(UUID string) (model.Booking, error)
+	GetByID(ID uint64) (model.Booking, error)
+	Create(b model.Booking) (model.Booking, error)
+	Update(b model.Booking) (model.Booking, error)
 }
 
 func authenticate(ctx context.Context) (context.Context, error) {
