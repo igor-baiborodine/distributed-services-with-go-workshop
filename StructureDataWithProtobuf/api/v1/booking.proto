@@ -7,12 +7,13 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/igor-baiborodine/api/campsite_v1";
 
 message Booking {
-  string UUID = 1;
-  string Email = 2;
-  string FullName = 3;
-  string StartDate = 4;
-  string EndDate = 5;
-  bool   Active = 6;
-  google.protobuf.Timestamp CreatedAt = 7;
-  google.protobuf.Timestamp UpdatedAt = 8;
+  uint64 Offset = 1;
+  string UUID = 2;
+  string Email = 3;
+  string FullName = 4;
+  string StartDate = 5;
+  string EndDate = 6;
+  bool   Active = 7;
+  google.protobuf.Timestamp CreatedAt = 8;
+  google.protobuf.Timestamp UpdatedAt = 9;
 }
