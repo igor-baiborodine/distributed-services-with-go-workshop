@@ -1,0 +1,4 @@
+p, root, *, getBookingByUUID
+p, root, *, getBookingByID
+p, root, *, createBooking
+p, root, *, updateBooking

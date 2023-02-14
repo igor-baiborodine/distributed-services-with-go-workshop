@@ -15,7 +15,7 @@ the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking)
 - [X] [4.Serve Requests with gRPC](/ServeRequestsWithgRPC)
 - [X] [5.Secure Your Services](/SecureYourServices)
 - [X] [6.Observe Your Systems](/ObserveYourSystems)
-- [ ] 7.Server-to-server Service Discovery
+- [X] [7.Server-to-server Service Discovery](/ServerSideServiceDiscovery)
 - [ ] 8.Coordinate Your Services with Consensus
 - [ ] 9.Discover Servers and Load Balance from the Client
 - [ ] 10.Deploy Applications with Kubernetes Locally
