@@ -22,7 +22,5 @@ $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ### Protobuf Compilation
 ```shell
-$ protoc api/v1/*.proto --go_out=. --go_opt=paths=source_relative --proto_path=.
-# or
 $ make compile
 ```
