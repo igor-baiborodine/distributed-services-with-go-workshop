@@ -1,4 +1,3 @@
-// START: intro
 package log
 
 import (
