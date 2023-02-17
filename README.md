@@ -12,7 +12,7 @@ application is used as an example.
 
 - [X] 1.[Let's Go](/LetsGo)
 - [X] 2.[Structure Data with Protocol Buffers](/StructureDataWithProtobuf) 
-- [ ] 3.Write a Booking Log Package
+- [X] 3.[Write a Log Package](/WriteALogPackage)
 - [ ] 4.Serve Requests with gRPC
 - [ ] 5.Secure Your Services
 - [ ] 6.Observe Your Systems
