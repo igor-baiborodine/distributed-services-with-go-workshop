@@ -10,8 +10,8 @@ import (
 func NewHTTPServer(addr string) *http.Server {
 	httpsrv := newHTTPServer()
 	r := mux.NewRouter()
-	r.HandleFunc("/", httpsrv.handleProduce).Methods("POST")
-	r.HandleFunc("/", httpsrv.handleConsume).Methods("GET")
+	r.HandleFunc("/", httpsrv.handleCreate).Methods("POST")
+	r.HandleFunc("/", httpsrv.handleRead).Methods("GET")
 	return &http.Server{
 		Addr:    addr,
 		Handler: r,
@@ -19,44 +19,44 @@ func NewHTTPServer(addr string) *http.Server {
 }
 
 type httpServer struct {
-	Log *Log
+	Campsite *Campsite
 }
 
 func newHTTPServer() *httpServer {
 	return &httpServer{
-		Log: NewLog(),
+		Campsite: NewCampsite(),
 	}
 }
 
-type ProduceRequest struct {
-	Record Record `json:"record"`
+type CreateRequest struct {
+	Booking Booking `json:"booking"`
 }
 
-type ProduceResponse struct {
-	Offset uint64 `json:"offset"`
+type CreateResponse struct {
+	UUID string `json:"uuid"`
 }
 
-type ConsumeRequest struct {
-	Offset uint64 `json:"offset"`
+type ReadRequest struct {
+	UUID string `json:"uuid"`
 }
 
-type ConsumeResponse struct {
-	Record Record `json:"record"`
+type ReadResponse struct {
+	Booking Booking `json:"booking"`
 }
 
-func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
-	var req ProduceRequest
+func (s *httpServer) handleCreate(w http.ResponseWriter, r *http.Request) {
+	var req CreateRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	off, err := s.Log.Append(req.Record)
+	uuid, err := s.Campsite.Create(req.Booking)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := ProduceResponse{Offset: off}
+	res := CreateResponse{UUID: uuid}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,15 +64,15 @@ func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
-	var req ConsumeRequest
+func (s *httpServer) handleRead(w http.ResponseWriter, r *http.Request) {
+	var req ReadRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	record, err := s.Log.Read(req.Offset)
-	if err == ErrOffsetNotFound {
+	booking, err := s.Campsite.Read(req.UUID)
+	if err == ErrBookingNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -80,7 +80,7 @@ func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := ConsumeResponse{Record: record}
+	res := ReadResponse{Booking: booking}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
