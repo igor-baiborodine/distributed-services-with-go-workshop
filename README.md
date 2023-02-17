@@ -10,7 +10,7 @@ application is used as an example.
 
 **Table of Contents**
 
-- [ ] 1.Let's Go
+- [X] 1.[Let's Go](/LetsGo)
 - [ ] 2.Structure Data with Protocol Buffers 
 - [ ] 3.Write a Booking Log Package
 - [ ] 4.Serve Requests with gRPC
