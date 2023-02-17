@@ -4,8 +4,9 @@ This workshop covers material from
 the ["Distributed Services with Go"](https://www.amazon.ca/Distributed-Services-Go-Reliable-Maintainable/dp/1680507605)
 book.
 
-Instead of the [Commit Log](https://github.com/travisjeffery/proglog) application, a simplified version of
-the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) is used as an example.
+A simplified version of the [Campsite Booking API](https://github.com/igor-baiborodine/campsite-booking) 
+based on the [Commit Log](https://github.com/travisjeffery/proglog) 
+application is used as an example.
 
 **Table of Contents**
 
