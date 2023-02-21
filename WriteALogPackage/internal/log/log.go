@@ -59,7 +59,7 @@ func (l *Log) setup() error {
 		if err = l.newSegment(baseOffsets[i]); err != nil {
 			return err
 		}
-		// baseOffset contains dup for index and store so we skip the dup
+		// baseOffset contains dup for offIndex and store, so we skip the dup
 		i++
 	}
 	if l.segments == nil {

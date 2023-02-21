@@ -12,7 +12,7 @@ import (
 
 type segment struct {
 	store                  *store
-	index                  *index
+	offIndex               *offIndex
 	baseOffset, nextOffset uint64
 	config                 Config
 }
@@ -35,21 +35,25 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		return nil, err
 	}
 	indexFile, err := os.OpenFile(
-		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".index")),
+		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".offIndex")),
 		os.O_RDWR|os.O_CREATE,
 		0644,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if s.index, err = newIndex(indexFile, c); err != nil {
+	var idx *index
+	if idx, err = newIndex(indexFile, offIndexWidth, c); err != nil {
 		return nil, err
 	}
-	if off, _, err := s.index.Read(-1); err != nil {
+	s.offIndex = &offIndex{idx}
+
+	if off, _, err := s.offIndex.Read(-1); err != nil {
 		s.nextOffset = baseOffset
 	} else {
 		s.nextOffset = baseOffset + uint64(off) + 1
 	}
+	// TODO: uuid index
 	return s, nil
 }
 
@@ -64,9 +68,9 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	if err = s.index.Write(
-		// index offsets are relative to base offset
-		uint32(s.nextOffset-uint64(s.baseOffset)),
+	if err = s.offIndex.Write(
+		// offIndex offsets are relative to base offset
+		uint32(s.nextOffset-s.baseOffset),
 		pos,
 	); err != nil {
 		return 0, err
@@ -76,7 +80,7 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 }
 
 func (s *segment) Read(off uint64) (*api.Record, error) {
-	_, pos, err := s.index.Read(int64(off - s.baseOffset))
+	_, pos, err := s.offIndex.Read(int64(off - s.baseOffset))
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +95,11 @@ func (s *segment) Read(off uint64) (*api.Record, error) {
 
 func (s *segment) IsMaxed() bool {
 	return s.store.size >= s.config.Segment.MaxStoreBytes ||
-		s.index.size >= s.config.Segment.MaxIndexBytes
+		s.offIndex.size >= s.config.Segment.MaxIndexBytes
 }
 
 func (s *segment) Close() error {
-	if err := s.index.Close(); err != nil {
+	if err := s.offIndex.Close(); err != nil {
 		return err
 	}
 	if err := s.store.Close(); err != nil {
@@ -108,7 +112,7 @@ func (s *segment) Remove() error {
 	if err := s.Close(); err != nil {
 		return err
 	}
-	if err := os.Remove(s.index.Name()); err != nil {
+	if err := os.Remove(s.offIndex.Name()); err != nil {
 		return err
 	}
 	if err := os.Remove(s.store.Name()); err != nil {

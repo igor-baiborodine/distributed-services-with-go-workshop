@@ -8,20 +8,28 @@ import (
 )
 
 var (
-	offWidth uint64 = 4
-	posWidth uint64 = 8
-	entWidth        = offWidth + posWidth
+	offIndexWidth = width{4, lenWidth}
 )
+
+type width struct {
+	off, pos uint64
+}
 
 type index struct {
 	file *os.File
 	mmap gommap.MMap
 	size uint64
+	width
 }
 
-func newIndex(f *os.File, c Config) (*index, error) {
+type offIndex struct {
+	*index
+}
+
+func newIndex(f *os.File, w width, c Config) (*index, error) {
 	idx := &index{
-		file: f,
+		file:  f,
+		width: w,
 	}
 	fi, err := os.Stat(f.Name())
 	if err != nil {
@@ -43,6 +51,34 @@ func newIndex(f *os.File, c Config) (*index, error) {
 	return idx, nil
 }
 
+func (i *offIndex) Read(in int64) (out uint32, pos uint64, err error) {
+	if i.size == 0 {
+		return 0, 0, io.EOF
+	}
+	if in == -1 {
+		out = uint32((i.size / i.entWidth()) - 1)
+	} else {
+		out = uint32(in)
+	}
+	pos = uint64(out) * i.entWidth()
+	if i.size < pos+i.entWidth() {
+		return 0, 0, io.EOF
+	}
+	out = enc.Uint32(i.mmap[pos : pos+i.width.off])
+	pos = enc.Uint64(i.mmap[pos+i.width.off : pos+i.entWidth()])
+	return out, pos, nil
+}
+
+func (i *offIndex) Write(off uint32, pos uint64) error {
+	if uint64(len(i.mmap)) < i.size+i.entWidth() {
+		return io.EOF
+	}
+	enc.PutUint32(i.mmap[i.size:i.size+i.entWidth()], off)
+	enc.PutUint64(i.mmap[i.size+i.width.off:i.size+i.entWidth()], pos)
+	i.size += i.entWidth()
+	return nil
+}
+
 func (i *index) Close() error {
 	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
 		return err
@@ -56,34 +92,10 @@ func (i *index) Close() error {
 	return i.file.Close()
 }
 
-func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
-	if i.size == 0 {
-		return 0, 0, io.EOF
-	}
-	if in == -1 {
-		out = uint32((i.size / entWidth) - 1)
-	} else {
-		out = uint32(in)
-	}
-	pos = uint64(out) * entWidth
-	if i.size < pos+entWidth {
-		return 0, 0, io.EOF
-	}
-	out = enc.Uint32(i.mmap[pos : pos+offWidth])
-	pos = enc.Uint64(i.mmap[pos+offWidth : pos+entWidth])
-	return out, pos, nil
-}
-
-func (i *index) Write(off uint32, pos uint64) error {
-	if uint64(len(i.mmap)) < i.size+entWidth {
-		return io.EOF
-	}
-	enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
-	enc.PutUint64(i.mmap[i.size+offWidth:i.size+entWidth], pos)
-	i.size += uint64(entWidth)
-	return nil
-}
-
 func (i *index) Name() string {
 	return i.file.Name()
+}
+
+func (i *index) entWidth() uint64 {
+	return i.off + i.pos
 }

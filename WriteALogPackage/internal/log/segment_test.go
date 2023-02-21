@@ -18,7 +18,7 @@ func TestSegment(t *testing.T) {
 
 	c := Config{}
 	c.Segment.MaxStoreBytes = 1024
-	c.Segment.MaxIndexBytes = entWidth * 3
+	c.Segment.MaxIndexBytes = (offIndexWidth.off + offIndexWidth.pos) * 3
 
 	s, err := newSegment(dir, 16, c)
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestSegment(t *testing.T) {
 	_, err = s.Append(want)
 	require.Equal(t, io.EOF, err)
 
-	// maxed index
+	// maxed offIndex
 	require.True(t, s.IsMaxed())
 
 	c.Segment.MaxStoreBytes = uint64(len(want.Value) * 3)

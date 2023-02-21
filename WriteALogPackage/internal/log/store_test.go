@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	write = []byte("hello world")
-	width = uint64(len(write)) + lenWidth
+	write    = []byte("hello world")
+	entWidth = uint64(len(write)) + lenWidth
 )
 
 func TestStoreAppendRead(t *testing.T) {
@@ -34,7 +34,7 @@ func testAppend(t *testing.T, s *store) {
 	for i := uint64(1); i < 4; i++ {
 		n, pos, err := s.Append(write)
 		require.NoError(t, err)
-		require.Equal(t, pos+n, width*i)
+		require.Equal(t, pos+n, entWidth*i)
 	}
 }
 
@@ -45,7 +45,7 @@ func testRead(t *testing.T, s *store) {
 		read, err := s.Read(pos)
 		require.NoError(t, err)
 		require.Equal(t, write, read)
-		pos += width
+		pos += entWidth
 	}
 }
 
