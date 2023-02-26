@@ -1,11 +1,10 @@
 syntax = "proto3";
 
-package log.v1;
+package campsite.v1;
 
 option go_package = "github.com/igor-baiborodine/api/campsite_v1";
 
 message Record {
-  bytes value = 1;
-  uint64 offset = 2;
+  uint64 Offset = 1;
+  bytes  Value = 2;
 }
-

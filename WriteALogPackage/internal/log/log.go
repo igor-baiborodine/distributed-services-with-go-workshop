@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -70,6 +71,14 @@ func (l *Log) setup() error {
 	return nil
 }
 
+func (l *Log) AppendBooking(booking *api.Booking) (uint64, error) {
+	val, err := json.Marshal(booking)
+	if err != nil {
+		return 0, err
+	}
+	return l.Append(&api.Record{Value: val})
+}
+
 func (l *Log) Append(record *api.Record) (uint64, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -81,6 +90,27 @@ func (l *Log) Append(record *api.Record) (uint64, error) {
 		err = l.newSegment(off + 1)
 	}
 	return off, err
+}
+
+func (l *Log) ReadByUUID(uuid string) (*api.Record, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	var s *segment
+	var off uint64
+
+	for _, segment := range l.segments {
+		for i := len(segment.uuids) - 1; i >= 0; i-- {
+			if segment.uuids[i] == uuid {
+				s = segment
+				off = uint64(i)
+				break
+			}
+		}
+	}
+	if s == nil {
+		return nil, fmt.Errorf("no offset found for uuid: %d, %s", off, uuid)
+	}
+	return s.Read(s.baseOffset + off)
 }
 
 func (l *Log) Read(off uint64) (*api.Record, error) {

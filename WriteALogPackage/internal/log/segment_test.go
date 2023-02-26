@@ -6,15 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/WriteALogPackage/api/v1"
 )
 
 func TestSegment(t *testing.T) {
 	dir, _ := os.MkdirTemp("", "segment-test")
 	defer os.RemoveAll(dir)
 
-	want := &api.Record{Value: []byte("hello world")}
+	b := newRandomBooking(t)
+	want := newRecord(t, b)
 
 	c := Config{}
 	c.Segment.MaxStoreBytes = 1024
