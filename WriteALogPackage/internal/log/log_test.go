@@ -18,11 +18,12 @@ func TestLog(t *testing.T) {
 	for scenario, fn := range map[string]func(
 		t *testing.T, log *Log,
 	){
-		"append and read a record succeeds": testAppendRead,
-		"offset out of range error":         testOutOfRangeErr,
-		"init with existing segments":       testInitExisting,
-		"reader":                            testReader,
-		"truncate":                          testTruncate,
+		"append and read a record succeeds":  testAppendRead,
+		"offset out of range error":          testOutOfRangeErr,
+		"init with existing segments":        testInitExisting,
+		"reader":                             testReader,
+		"truncate":                           testTruncate,
+		"append and read a booking succeeds": testAppendReadBooking,
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			dir, err := os.MkdirTemp("", "store-test")
@@ -50,6 +51,17 @@ func testAppendRead(t *testing.T, log *Log) {
 	require.NoError(t, err)
 	require.Equal(t, want.Value, got.Value)
 	require.Equal(t, uint64(0), got.Offset)
+}
+
+func testAppendReadBooking(t *testing.T, log *Log) {
+	want := newRandomBooking(t)
+	off, err := log.AppendBooking(want)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), off)
+
+	got, err := log.ReadBooking(want.Uuid)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }
 
 func testOutOfRangeErr(t *testing.T, log *Log) {

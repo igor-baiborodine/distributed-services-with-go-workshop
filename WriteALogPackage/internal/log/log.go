@@ -92,7 +92,7 @@ func (l *Log) Append(record *api.Record) (uint64, error) {
 	return off, err
 }
 
-func (l *Log) ReadByUUID(uuid string) (*api.Record, error) {
+func (l *Log) ReadBooking(uuid string) (*api.Booking, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	var s *segment
@@ -110,7 +110,16 @@ func (l *Log) ReadByUUID(uuid string) (*api.Record, error) {
 	if s == nil {
 		return nil, fmt.Errorf("no offset found for uuid: %d, %s", off, uuid)
 	}
-	return s.Read(s.baseOffset + off)
+	r, err := s.Read(s.baseOffset + off)
+	if err != nil {
+		return nil, err
+	}
+	var b api.Booking
+	err = json.Unmarshal(r.Value, &b)
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
 }
 
 func (l *Log) Read(off uint64) (*api.Record, error) {
