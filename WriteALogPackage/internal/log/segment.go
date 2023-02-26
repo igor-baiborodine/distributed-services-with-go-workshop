@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -14,6 +15,7 @@ type segment struct {
 	store                  *store
 	index                  *index
 	baseOffset, nextOffset uint64
+	uuids                  []string
 	config                 Config
 }
 
@@ -50,6 +52,20 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	} else {
 		s.nextOffset = baseOffset + uint64(off) + 1
 	}
+	if s.nextOffset > baseOffset {
+		for i := baseOffset; i < s.nextOffset; i++ {
+			rec, err := s.Read(i)
+			if err != nil {
+				return nil, err
+			}
+			var b api.Booking
+			err = json.Unmarshal(rec.Value, &b)
+			if err != nil {
+				return nil, err
+			}
+			s.uuids = append(s.uuids, b.Uuid)
+		}
+	}
 	return s, nil
 }
 
@@ -66,11 +82,17 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 	}
 	if err = s.index.Write(
 		// index offsets are relative to base offset
-		uint32(s.nextOffset-uint64(s.baseOffset)),
+		uint32(s.nextOffset-s.baseOffset),
 		pos,
 	); err != nil {
 		return 0, err
 	}
+	var b api.Booking
+	err = json.Unmarshal(record.Value, &b)
+	if err != nil {
+		return 0, err
+	}
+	s.uuids = append(s.uuids, b.Uuid)
 	s.nextOffset++
 	return cur, nil
 }

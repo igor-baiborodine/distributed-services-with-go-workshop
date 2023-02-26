@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -25,10 +26,10 @@ type Log struct {
 
 func NewLog(dir string, c Config) (*Log, error) {
 	if c.Segment.MaxStoreBytes == 0 {
-		c.Segment.MaxStoreBytes = 1024
+		c.Segment.MaxStoreBytes = 10240
 	}
 	if c.Segment.MaxIndexBytes == 0 {
-		c.Segment.MaxIndexBytes = 1024
+		c.Segment.MaxIndexBytes = 10240
 	}
 	l := &Log{
 		Dir:    dir,
@@ -70,6 +71,14 @@ func (l *Log) setup() error {
 	return nil
 }
 
+func (l *Log) AppendBooking(booking *api.Booking) (uint64, error) {
+	val, err := json.Marshal(booking)
+	if err != nil {
+		return 0, err
+	}
+	return l.Append(&api.Record{Value: val})
+}
+
 func (l *Log) Append(record *api.Record) (uint64, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -81,6 +90,36 @@ func (l *Log) Append(record *api.Record) (uint64, error) {
 		err = l.newSegment(off + 1)
 	}
 	return off, err
+}
+
+func (l *Log) ReadBooking(uuid string) (*api.Booking, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	var s *segment
+	var off uint64
+
+	for _, segment := range l.segments {
+		for i := len(segment.uuids) - 1; i >= 0; i-- {
+			if segment.uuids[i] == uuid {
+				s = segment
+				off = uint64(i)
+				break
+			}
+		}
+	}
+	if s == nil {
+		return nil, fmt.Errorf("no offset found for uuid: %d, %s", off, uuid)
+	}
+	r, err := s.Read(s.baseOffset + off)
+	if err != nil {
+		return nil, err
+	}
+	var b api.Booking
+	err = json.Unmarshal(r.Value, &b)
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
 }
 
 func (l *Log) Read(off uint64) (*api.Record, error) {
