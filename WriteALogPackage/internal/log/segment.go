@@ -63,7 +63,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 			if err != nil {
 				return nil, err
 			}
-			s.uuids = append(s.uuids, b.UUID)
+			s.uuids = append(s.uuids, b.Uuid)
 		}
 	}
 	return s, nil
@@ -92,7 +92,7 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	s.uuids = append(s.uuids, b.UUID)
+	s.uuids = append(s.uuids, b.Uuid)
 	s.nextOffset++
 	return cur, nil
 }

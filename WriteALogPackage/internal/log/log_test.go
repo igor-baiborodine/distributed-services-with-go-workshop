@@ -121,7 +121,7 @@ func newRandomBooking(t *testing.T) *api.Booking {
 	b := &api.Booking{}
 	err := faker.FakeData(b)
 	require.NoError(t, err)
-	b.UUID = uuid.NewString()
+	b.Uuid = uuid.NewString()
 	return b
 }
 

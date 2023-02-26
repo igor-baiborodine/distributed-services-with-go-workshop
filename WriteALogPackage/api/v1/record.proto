@@ -5,6 +5,6 @@ package campsite.v1;
 option go_package = "github.com/igor-baiborodine/api/campsite_v1";
 
 message Record {
-  uint64 Offset = 1;
-  bytes  Value = 2;
+  uint64 offset = 1;
+  bytes  value = 2;
 }
