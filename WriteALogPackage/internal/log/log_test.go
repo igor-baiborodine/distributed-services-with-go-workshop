@@ -41,19 +41,20 @@ func TestLog(t *testing.T) {
 
 func testAppendRead(t *testing.T, log *Log) {
 	b := newRandomBooking(t)
-	r := newRecord(t, b)
-	off, err := log.Append(r)
+	want := newRecord(t, b)
+	off, err := log.Append(want)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), off)
 
-	read, err := log.Read(off)
+	got, err := log.Read(off)
 	require.NoError(t, err)
-	require.Equal(t, r.Value, read.Value)
+	require.Equal(t, want.Value, got.Value)
+	require.Equal(t, uint64(0), got.Offset)
 }
 
 func testOutOfRangeErr(t *testing.T, log *Log) {
-	read, err := log.Read(1)
-	require.Nil(t, read)
+	got, err := log.Read(1)
+	require.Nil(t, got)
 	require.Error(t, err)
 }
 
@@ -66,29 +67,29 @@ func testInitExisting(t *testing.T, log *Log) {
 	}
 	require.NoError(t, log.Close())
 
-	off, err := log.LowestOffset()
+	got, err := log.LowestOffset()
 	require.NoError(t, err)
-	require.Equal(t, uint64(0), off)
-	off, err = log.HighestOffset()
+	require.Equal(t, uint64(0), got)
+	got, err = log.HighestOffset()
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), off)
+	require.Equal(t, uint64(2), got)
 
 	n, err := NewLog(log.Dir, log.Config)
 	require.NoError(t, err)
 
-	off, err = n.LowestOffset()
+	got, err = n.LowestOffset()
 	require.NoError(t, err)
-	require.Equal(t, uint64(0), off)
-	off, err = n.HighestOffset()
+	require.Equal(t, uint64(0), got)
+	got, err = n.HighestOffset()
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), off)
+	require.Equal(t, uint64(2), got)
 	require.Equal(t, 3, len(log.activeSegment.uuids))
 }
 
 func testReader(t *testing.T, log *Log) {
 	b := newRandomBooking(t)
-	r := newRecord(t, b)
-	off, err := log.Append(r)
+	want := newRecord(t, b)
+	off, err := log.Append(want)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), off)
 
@@ -96,10 +97,10 @@ func testReader(t *testing.T, log *Log) {
 	out, err := io.ReadAll(reader)
 	require.NoError(t, err)
 
-	read := &api.Record{}
-	err = proto.Unmarshal(out[lenWidth:], read)
+	got := &api.Record{}
+	err = proto.Unmarshal(out[lenWidth:], got)
 	require.NoError(t, err)
-	require.Equal(t, r.Value, read.Value)
+	require.Equal(t, want.Value, got.Value)
 }
 
 func testTruncate(t *testing.T, log *Log) {
