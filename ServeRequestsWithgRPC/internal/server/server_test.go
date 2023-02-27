@@ -20,9 +20,9 @@ func TestServer(t *testing.T) {
 		client api.LogClient,
 		config *Config,
 	){
-		"produce/consume a message to/from the log succeeeds": testProduceConsume,
-		"produce/consume stream succeeds":                     testProduceConsumeStream,
-		"consume past log boundary fails":                     testConsumePastBoundary,
+		"produce/consume a message to/from the log succeeds": testProduceConsume,
+		"produce/consume stream succeeds":                    testProduceConsumeStream,
+		"consume past log boundary fails":                    testConsumePastBoundary,
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			client, config, teardown := setupTest(t, nil)
@@ -32,9 +32,6 @@ func TestServer(t *testing.T) {
 	}
 }
 
-// END: intro
-
-// START: setup
 func setupTest(t *testing.T, fn func(*Config)) (
 	client api.LogClient,
 	config *Config,
@@ -78,9 +75,6 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	}
 }
 
-// END: setup
-
-// START: produceconsume
 func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
 
@@ -104,9 +98,6 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	require.Equal(t, want.Offset, consume.Record.Offset)
 }
 
-// END: produceconsume
-
-// START: consumeerror
 func testConsumePastBoundary(
 	t *testing.T,
 	client api.LogClient,
@@ -134,9 +125,6 @@ func testConsumePastBoundary(
 	}
 }
 
-// END: consumeerror
-
-// START: stream
 func testProduceConsumeStream(
 	t *testing.T,
 	client api.LogClient,
@@ -191,5 +179,3 @@ func testProduceConsumeStream(
 		}
 	}
 }
-
-// END: stream

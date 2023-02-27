@@ -4,7 +4,7 @@
 // - protoc             v3.21.12
 // source: api/v1/log.proto
 
-package log_v1
+package booking_v1
 
 import (
 	context "context"
@@ -38,7 +38,7 @@ func NewLogClient(cc grpc.ClientConnInterface) LogClient {
 
 func (c *logClient) Produce(ctx context.Context, in *ProduceRequest, opts ...grpc.CallOption) (*ProduceResponse, error) {
 	out := new(ProduceResponse)
-	err := c.cc.Invoke(ctx, "/log.v1.Log/Produce", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/booking.v1.Log/Produce", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (c *logClient) Produce(ctx context.Context, in *ProduceRequest, opts ...grp
 
 func (c *logClient) Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (*ConsumeResponse, error) {
 	out := new(ConsumeResponse)
-	err := c.cc.Invoke(ctx, "/log.v1.Log/Consume", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/booking.v1.Log/Consume", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (c *logClient) Consume(ctx context.Context, in *ConsumeRequest, opts ...grp
 }
 
 func (c *logClient) ConsumeStream(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Log_ServiceDesc.Streams[0], "/log.v1.Log/ConsumeStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &Log_ServiceDesc.Streams[0], "/booking.v1.Log/ConsumeStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (x *logConsumeStreamClient) Recv() (*ConsumeResponse, error) {
 }
 
 func (c *logClient) ProduceStream(ctx context.Context, opts ...grpc.CallOption) (Log_ProduceStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Log_ServiceDesc.Streams[1], "/log.v1.Log/ProduceStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &Log_ServiceDesc.Streams[1], "/booking.v1.Log/ProduceStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func _Log_Produce_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/log.v1.Log/Produce",
+		FullMethod: "/booking.v1.Log/Produce",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LogServer).Produce(ctx, req.(*ProduceRequest))
@@ -185,7 +185,7 @@ func _Log_Consume_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/log.v1.Log/Consume",
+		FullMethod: "/booking.v1.Log/Consume",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LogServer).Consume(ctx, req.(*ConsumeRequest))
@@ -244,7 +244,7 @@ func (x *logProduceStreamServer) Recv() (*ProduceRequest, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Log_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "log.v1.Log",
+	ServiceName: "booking.v1.Log",
 	HandlerType: (*LogServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
