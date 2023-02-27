@@ -4,22 +4,23 @@ import (
 	"fmt"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type ErrOffsetOutOfRange struct {
-	Offset uint64
+type ErrBookingLog struct {
+	Code       codes.Code
+	ErrMsgFunc func() string
 }
 
-func (e ErrOffsetOutOfRange) GRPCStatus() *status.Status {
-	st := status.New(
-		404,
-		fmt.Sprintf("offset out of range: %d", e.Offset),
-	)
-	msg := fmt.Sprintf(
-		"The requested offset is outside the log's range: %d",
-		e.Offset,
-	)
+type ErrOffsetOutOfRange struct {
+	ErrBookingLog *ErrBookingLog
+}
+
+func (e ErrBookingLog) GRPCStatus() *status.Status {
+	msg := e.ErrMsgFunc()
+	st := status.New(e.Code, msg)
+
 	d := &errdetails.LocalizedMessage{
 		Locale:  "en-US",
 		Message: msg,
@@ -31,6 +32,21 @@ func (e ErrOffsetOutOfRange) GRPCStatus() *status.Status {
 	return std
 }
 
-func (e ErrOffsetOutOfRange) Error() string {
+func (e ErrBookingLog) Error() string {
 	return e.GRPCStatus().Err().Error()
+}
+
+func (e ErrOffsetOutOfRange) Error() string {
+	return e.ErrBookingLog.Error()
+}
+
+func NewErrOffsetOutOfRange(off uint64) *ErrOffsetOutOfRange {
+	return &ErrOffsetOutOfRange{
+		ErrBookingLog: &ErrBookingLog{
+			Code: 404,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("offset out of range: %d", off)
+			},
+		},
+	}
 }
