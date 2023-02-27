@@ -48,7 +48,7 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	*api.ConsumeResponse, error) {
 	record, err := s.BookingLog.Read(req.Offset)
 	if err != nil {
-		return nil, api.NewErrOffsetOutOfRange(req.Offset)
+		return nil, api.NewErrNotFoundForOffset(req.Offset)
 	}
 	return &api.ConsumeResponse{Record: record}, nil
 }
@@ -83,7 +83,7 @@ func (s *grpcServer) ConsumeStream(
 			res, err := s.Consume(stream.Context(), req)
 			switch err.(type) {
 			case nil:
-			case api.ErrOffsetOutOfRange:
+			case api.ErrNotFoundForOffset:
 				continue
 			default:
 				return err

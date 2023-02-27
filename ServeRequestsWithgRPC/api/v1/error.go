@@ -13,7 +13,19 @@ type ErrBookingLog struct {
 	ErrMsgFunc func() string
 }
 
-type ErrOffsetOutOfRange struct {
+type ErrNotFoundForOffset struct {
+	ErrBookingLog *ErrBookingLog
+}
+
+type ErrNotFoundForUUID struct {
+	ErrBookingLog *ErrBookingLog
+}
+
+type ErrCreateBooking struct {
+	ErrBookingLog *ErrBookingLog
+}
+
+type ErrUpdateBooking struct {
 	ErrBookingLog *ErrBookingLog
 }
 
@@ -36,16 +48,61 @@ func (e ErrBookingLog) Error() string {
 	return e.GRPCStatus().Err().Error()
 }
 
-func (e ErrOffsetOutOfRange) Error() string {
+func (e ErrNotFoundForOffset) Error() string {
 	return e.ErrBookingLog.Error()
 }
 
-func NewErrOffsetOutOfRange(off uint64) *ErrOffsetOutOfRange {
-	return &ErrOffsetOutOfRange{
+func (e ErrNotFoundForUUID) Error() string {
+	return e.ErrBookingLog.Error()
+}
+
+func (e ErrCreateBooking) Error() string {
+	return e.ErrBookingLog.Error()
+}
+
+func (e ErrUpdateBooking) Error() string {
+	return e.ErrBookingLog.Error()
+}
+
+func NewErrNotFoundForOffset(off uint64) *ErrNotFoundForOffset {
+	return &ErrNotFoundForOffset{
 		ErrBookingLog: &ErrBookingLog{
 			Code: 404,
 			ErrMsgFunc: func() string {
-				return fmt.Sprintf("offset out of range: %d", off)
+				return fmt.Sprintf("no booking found for offset: %d", off)
+			},
+		},
+	}
+}
+
+func NewErrNotFoundForUUID(uuid string) *ErrNotFoundForUUID {
+	return &ErrNotFoundForUUID{
+		ErrBookingLog: &ErrBookingLog{
+			Code: 404,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("no booking found for UUID: %s", uuid)
+			},
+		},
+	}
+}
+
+func NewErrCreateBooking(b *Booking) *ErrCreateBooking {
+	return &ErrCreateBooking{
+		ErrBookingLog: &ErrBookingLog{
+			Code: 400,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("cannot create booking: %s", b)
+			},
+		},
+	}
+}
+
+func NewErrUpdateBooking(b *Booking) *ErrUpdateBooking {
+	return &ErrUpdateBooking{
+		ErrBookingLog: &ErrBookingLog{
+			Code: 400,
+			ErrMsgFunc: func() string {
+				return fmt.Sprintf("cannot update booking: %s", b)
 			},
 		},
 	}

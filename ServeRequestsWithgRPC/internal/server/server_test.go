@@ -119,7 +119,7 @@ func testConsumePastBoundary(
 		t.Fatal("consume not nil")
 	}
 	got := status.Code(err)
-	want := status.Code(api.NewErrOffsetOutOfRange(produce.Offset + 1))
+	want := status.Code(api.NewErrNotFoundForOffset(produce.Offset + 1))
 	if got != want {
 		t.Fatalf("got err: %v, want: %v", got, want)
 	}
