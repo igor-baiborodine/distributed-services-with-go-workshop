@@ -10,9 +10,9 @@ application is used as an example.
 
 **Table of Contents**
 
-- [X] 1.[Let's Go](/LetsGo)
-- [X] 2.[Structure Data with Protocol Buffers](/StructureDataWithProtobuf) 
-- [X] 3.[Write a Log Package](/WriteALogPackage)
+- [X] 1.[Let's Go](/LetsGo) ([`b3e1789`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/b3e178977b5f9f407ca6f90fa1e4885a485f3ebd) [`f363393`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/f363393bb04ad8ac7de5299a27a647a131676348))
+- [X] 2.[Structure Data with Protocol Buffers](/StructureDataWithProtobuf) ([`2909908`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/29099086e4e287620486c12b74a762385c2f0f8e) [`7b07f56`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/7b07f5641be1cddbd5203e47e29466177bb95dba))
+- [X] 3.[Write a Log Package](/WriteALogPackage) ([`bbd20aa`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/bbd20aa31961f2ff679a9c9ec63a7b78da80ab4e) [`65e2ef9`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/65e2ef9c3a3275dc098c57c3049eef9e06ed8565))
 - [X] 4.[Serve Requests with gRPC](/ServeRequestsWithgRPC)
 - [ ] 5.Secure Your Services
 - [ ] 6.Observe Your Systems
