@@ -3,12 +3,17 @@ package server
 
 import (
 	"context"
-	"io/ioutil"
+	"encoding/json"
 	"net"
+	"os"
 	"testing"
 
+	"github.com/go-faker/faker/v4"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/internal/log"
@@ -42,18 +47,18 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	l, err := net.Listen("tcp", ":0")
 	require.NoError(t, err)
 
-	clientOptions := []grpc.DialOption{grpc.WithInsecure()}
+	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
 	require.NoError(t, err)
 
-	dir, err := ioutil.TempDir("", "server-test")
+	dir, err := os.MkdirTemp("", "server-test")
 	require.NoError(t, err)
 
 	clog, err := log.NewLog(dir, log.Config{})
 	require.NoError(t, err)
 
 	config = &Config{
-		CommitLog: clog,
+		BookingLog: clog,
 	}
 	if fn != nil {
 		fn(config)
@@ -77,10 +82,8 @@ func setupTest(t *testing.T, fn func(*Config)) (
 
 func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
-
-	want := &api.Record{
-		Value: []byte("hello world"),
-	}
+	b := newRandomBooking(t)
+	want := newRecord(t, b)
 
 	produce, err := client.Produce(
 		ctx,
@@ -104,12 +107,9 @@ func testConsumePastBoundary(
 	config *Config,
 ) {
 	ctx := context.Background()
-
-	produce, err := client.Produce(ctx, &api.ProduceRequest{
-		Record: &api.Record{
-			Value: []byte("hello world"),
-		},
-	})
+	b := newRandomBooking(t)
+	produce, err := client.Produce(
+		ctx, &api.ProduceRequest{Record: newRecord(t, b)})
 	require.NoError(t, err)
 
 	consume, err := client.Consume(ctx, &api.ConsumeRequest{
@@ -118,8 +118,8 @@ func testConsumePastBoundary(
 	if consume != nil {
 		t.Fatal("consume not nil")
 	}
-	got := grpc.Code(err)
-	want := grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	got := status.Code(err)
+	want := status.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
 	if got != want {
 		t.Fatalf("got err: %v, want: %v", got, want)
 	}
@@ -131,13 +131,13 @@ func testProduceConsumeStream(
 	config *Config,
 ) {
 	ctx := context.Background()
-
+	b1, b2 := newRandomBooking(t), newRandomBooking(t)
 	records := []*api.Record{{
-		Value:  []byte("first message"),
 		Offset: 0,
+		Value:  newRecord(t, b1).Value,
 	}, {
-		Value:  []byte("second message"),
 		Offset: 1,
+		Value:  newRecord(t, b2).Value,
 	}}
 
 	{
@@ -178,4 +178,18 @@ func testProduceConsumeStream(
 			})
 		}
 	}
+}
+
+func newRandomBooking(t *testing.T) *api.Booking {
+	b := &api.Booking{}
+	err := faker.FakeData(b)
+	require.NoError(t, err)
+	b.Uuid = uuid.NewString()
+	return b
+}
+
+func newRecord(t *testing.T, b *api.Booking) *api.Record {
+	v, err := json.Marshal(b)
+	require.NoError(t, err)
+	return &api.Record{Value: v}
 }

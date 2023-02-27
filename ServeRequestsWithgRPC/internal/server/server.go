@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	CommitLog BookingLog
+	BookingLog BookingLog
 }
 
 type grpcServer struct {
@@ -37,7 +37,7 @@ func NewGRPCServer(config *Config) (*grpc.Server, error) {
 
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 	*api.ProduceResponse, error) {
-	offset, err := s.CommitLog.Append(req.Record)
+	offset, err := s.BookingLog.Append(req.Record)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +46,9 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	*api.ConsumeResponse, error) {
-	record, err := s.CommitLog.Read(req.Offset)
+	record, err := s.BookingLog.Read(req.Offset)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrOffsetOutOfRange{Offset: req.Offset}
 	}
 	return &api.ConsumeResponse{Record: record}, nil
 }

@@ -1,25 +1,24 @@
-// START: intro
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"google.golang.org/protobuf/proto"
+
+	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 )
 
 type segment struct {
 	store                  *store
 	index                  *index
 	baseOffset, nextOffset uint64
+	uuids                  []string
 	config                 Config
 }
 
-// END: intro
-
-// START: newsegment
 func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	s := &segment{
 		baseOffset: baseOffset,
@@ -53,12 +52,23 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	} else {
 		s.nextOffset = baseOffset + uint64(off) + 1
 	}
+	if s.nextOffset > baseOffset {
+		for i := baseOffset; i < s.nextOffset; i++ {
+			rec, err := s.Read(i)
+			if err != nil {
+				return nil, err
+			}
+			var b api.Booking
+			err = json.Unmarshal(rec.Value, &b)
+			if err != nil {
+				return nil, err
+			}
+			s.uuids = append(s.uuids, b.Uuid)
+		}
+	}
 	return s, nil
 }
 
-// END: newsegment
-
-// START: append
 func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 	cur := s.nextOffset
 	record.Offset = cur
@@ -72,18 +82,21 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 	}
 	if err = s.index.Write(
 		// index offsets are relative to base offset
-		uint32(s.nextOffset-uint64(s.baseOffset)),
+		uint32(s.nextOffset-s.baseOffset),
 		pos,
 	); err != nil {
 		return 0, err
 	}
+	var b api.Booking
+	err = json.Unmarshal(record.Value, &b)
+	if err != nil {
+		return 0, err
+	}
+	s.uuids = append(s.uuids, b.Uuid)
 	s.nextOffset++
 	return cur, nil
 }
 
-// END: append
-
-// START: read
 func (s *segment) Read(off uint64) (*api.Record, error) {
 	_, pos, err := s.index.Read(int64(off - s.baseOffset))
 	if err != nil {
@@ -98,17 +111,11 @@ func (s *segment) Read(off uint64) (*api.Record, error) {
 	return record, err
 }
 
-// END: read
-
-// START: ismaxed
 func (s *segment) IsMaxed() bool {
 	return s.store.size >= s.config.Segment.MaxStoreBytes ||
 		s.index.size >= s.config.Segment.MaxIndexBytes
 }
 
-// END: ismaxed
-
-// START: close
 func (s *segment) Close() error {
 	if err := s.index.Close(); err != nil {
 		return err
@@ -119,9 +126,6 @@ func (s *segment) Close() error {
 	return nil
 }
 
-// END: close
-
-// START: remove
 func (s *segment) Remove() error {
 	if err := s.Close(); err != nil {
 		return err
@@ -135,9 +139,6 @@ func (s *segment) Remove() error {
 	return nil
 }
 
-// END: remove
-
-// START: nearestmultiple
 func nearestMultiple(j, k uint64) uint64 {
 	if j >= 0 {
 		return (j / k) * k
@@ -145,5 +146,3 @@ func nearestMultiple(j, k uint64) uint64 {
 	return ((j - k + 1) / k) * k
 
 }
-
-// END: nearestmultiple

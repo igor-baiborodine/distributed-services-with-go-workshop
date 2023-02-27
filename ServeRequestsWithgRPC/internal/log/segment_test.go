@@ -2,19 +2,18 @@ package log
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRequestsWithgRPC/api/v1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSegment(t *testing.T) {
-	dir, _ := ioutil.TempDir("", "segment-test")
+	dir, _ := os.MkdirTemp("", "segment-test")
 	defer os.RemoveAll(dir)
 
-	want := &api.Record{Value: []byte("hello world")}
+	b := newRandomBooking(t)
+	want := newRecord(t, b)
 
 	c := Config{}
 	c.Segment.MaxStoreBytes = 1024
