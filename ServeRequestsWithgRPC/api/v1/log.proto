@@ -11,6 +11,9 @@ service Log {
   rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
   rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {}
   rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse) {}
+  rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
+  rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
+  rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse) {}
 }
 
 message ProduceRequest  {
@@ -27,6 +30,30 @@ message ConsumeRequest {
 
 message ConsumeResponse {
   Record record = 1;
+}
+
+message GetBookingRequest {
+  string uuid = 1;
+}
+
+message GetBookingResponse {
+  Booking booking = 1;
+}
+
+message CreateBookingRequest {
+  Booking booking = 1;
+}
+
+message CreateBookingResponse {
+  Booking booking = 1;
+}
+
+message UpdateBookingRequest {
+  Booking booking = 1;
+}
+
+message UpdateBookingResponse {
+  Booking booking = 1;
 }
 
 message Record {

@@ -26,6 +26,9 @@ type LogClient interface {
 	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (*ConsumeResponse, error)
 	ConsumeStream(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error)
 	ProduceStream(ctx context.Context, opts ...grpc.CallOption) (Log_ProduceStreamClient, error)
+	GetBooking(ctx context.Context, in *GetBookingRequest, opts ...grpc.CallOption) (*GetBookingResponse, error)
+	CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*CreateBookingResponse, error)
+	UpdateBooking(ctx context.Context, in *UpdateBookingRequest, opts ...grpc.CallOption) (*UpdateBookingResponse, error)
 }
 
 type logClient struct {
@@ -117,6 +120,33 @@ func (x *logProduceStreamClient) Recv() (*ProduceResponse, error) {
 	return m, nil
 }
 
+func (c *logClient) GetBooking(ctx context.Context, in *GetBookingRequest, opts ...grpc.CallOption) (*GetBookingResponse, error) {
+	out := new(GetBookingResponse)
+	err := c.cc.Invoke(ctx, "/booking.v1.Log/GetBooking", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *logClient) CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*CreateBookingResponse, error) {
+	out := new(CreateBookingResponse)
+	err := c.cc.Invoke(ctx, "/booking.v1.Log/CreateBooking", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *logClient) UpdateBooking(ctx context.Context, in *UpdateBookingRequest, opts ...grpc.CallOption) (*UpdateBookingResponse, error) {
+	out := new(UpdateBookingResponse)
+	err := c.cc.Invoke(ctx, "/booking.v1.Log/UpdateBooking", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LogServer is the server API for Log service.
 // All implementations must embed UnimplementedLogServer
 // for forward compatibility
@@ -125,6 +155,9 @@ type LogServer interface {
 	Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error)
 	ConsumeStream(*ConsumeRequest, Log_ConsumeStreamServer) error
 	ProduceStream(Log_ProduceStreamServer) error
+	GetBooking(context.Context, *GetBookingRequest) (*GetBookingResponse, error)
+	CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error)
+	UpdateBooking(context.Context, *UpdateBookingRequest) (*UpdateBookingResponse, error)
 	mustEmbedUnimplementedLogServer()
 }
 
@@ -143,6 +176,15 @@ func (UnimplementedLogServer) ConsumeStream(*ConsumeRequest, Log_ConsumeStreamSe
 }
 func (UnimplementedLogServer) ProduceStream(Log_ProduceStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProduceStream not implemented")
+}
+func (UnimplementedLogServer) GetBooking(context.Context, *GetBookingRequest) (*GetBookingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBooking not implemented")
+}
+func (UnimplementedLogServer) CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateBooking not implemented")
+}
+func (UnimplementedLogServer) UpdateBooking(context.Context, *UpdateBookingRequest) (*UpdateBookingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBooking not implemented")
 }
 func (UnimplementedLogServer) mustEmbedUnimplementedLogServer() {}
 
@@ -240,6 +282,60 @@ func (x *logProduceStreamServer) Recv() (*ProduceRequest, error) {
 	return m, nil
 }
 
+func _Log_GetBooking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBookingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServer).GetBooking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/booking.v1.Log/GetBooking",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServer).GetBooking(ctx, req.(*GetBookingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Log_CreateBooking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBookingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServer).CreateBooking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/booking.v1.Log/CreateBooking",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServer).CreateBooking(ctx, req.(*CreateBookingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Log_UpdateBooking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServer).UpdateBooking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/booking.v1.Log/UpdateBooking",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServer).UpdateBooking(ctx, req.(*UpdateBookingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Log_ServiceDesc is the grpc.ServiceDesc for Log service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -254,6 +350,18 @@ var Log_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Consume",
 			Handler:    _Log_Consume_Handler,
+		},
+		{
+			MethodName: "GetBooking",
+			Handler:    _Log_GetBooking_Handler,
+		},
+		{
+			MethodName: "CreateBooking",
+			Handler:    _Log_CreateBooking_Handler,
+		},
+		{
+			MethodName: "UpdateBooking",
+			Handler:    _Log_UpdateBooking_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
