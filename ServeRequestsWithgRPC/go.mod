@@ -3,6 +3,8 @@ module github.com/igor-baiborodine/distributed-services-with-go-workshop/ServeRe
 go 1.19
 
 require (
+	github.com/go-faker/faker/v4 v4.0.0
+	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/tysonmote/gommap v0.0.2
 	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923

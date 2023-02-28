@@ -1,19 +1,21 @@
 syntax = "proto3";
 
-package log.v1;
+package booking.v1;
 
-option go_package = "github.com/travisjeffery/api/log_v1";
+import "google/protobuf/timestamp.proto";
 
-// START: service
+option go_package = "github.com/igor-baiborodine/api/booking_v1";
+
 service Log {
   rpc Produce(ProduceRequest) returns (ProduceResponse) {}
   rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
   rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {}
   rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse) {}
+  rpc GetBooking(GetBookingRequest) returns (GetBookingResponse) {}
+  rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {}
+  rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse) {}
 }
-// END: service
 
-// START: apis
 message ProduceRequest  {
   Record record = 1;
 }
@@ -27,11 +29,45 @@ message ConsumeRequest {
 }
 
 message ConsumeResponse {
-  Record record = 2;
+  Record record = 1;
 }
-// END: apis
+
+message GetBookingRequest {
+  string uuid = 1;
+}
+
+message GetBookingResponse {
+  Booking booking = 1;
+}
+
+message CreateBookingRequest {
+  Booking booking = 1;
+}
+
+message CreateBookingResponse {
+  Booking booking = 1;
+}
+
+message UpdateBookingRequest {
+  Booking booking = 1;
+}
+
+message UpdateBookingResponse {
+  Booking booking = 1;
+}
 
 message Record {
-  bytes value = 1;
-  uint64 offset = 2;
+  uint64 offset = 1;
+  bytes value = 2;
+}
+
+message Booking {
+  string uuid = 1;
+  string email = 2;
+  string fullName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  bool   active = 6;
+  google.protobuf.Timestamp createdAt = 7;
+  google.protobuf.Timestamp updatedAt = 8;
 }

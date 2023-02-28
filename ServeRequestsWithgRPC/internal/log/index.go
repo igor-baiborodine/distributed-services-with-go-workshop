@@ -1,4 +1,3 @@
-// START: begin
 package log
 
 import (
@@ -20,9 +19,6 @@ type index struct {
 	size uint64
 }
 
-// END: begin
-
-// START: newindex
 func newIndex(f *os.File, c Config) (*index, error) {
 	idx := &index{
 		file: f,
@@ -47,9 +43,6 @@ func newIndex(f *os.File, c Config) (*index, error) {
 	return idx, nil
 }
 
-// END: newindex
-
-// START: close
 func (i *index) Close() error {
 	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
 		return err
@@ -63,9 +56,6 @@ func (i *index) Close() error {
 	return i.file.Close()
 }
 
-// END: close
-
-// START: read
 func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	if i.size == 0 {
 		return 0, 0, io.EOF
@@ -84,9 +74,6 @@ func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	return out, pos, nil
 }
 
-// END: read
-
-// START: write
 func (i *index) Write(off uint32, pos uint64) error {
 	if uint64(len(i.mmap)) < i.size+entWidth {
 		return io.EOF
@@ -97,11 +84,6 @@ func (i *index) Write(off uint32, pos uint64) error {
 	return nil
 }
 
-// END: write
-
-// START: name
 func (i *index) Name() string {
 	return i.file.Name()
 }
-
-// END: name
