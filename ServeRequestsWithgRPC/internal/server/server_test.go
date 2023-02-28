@@ -1,4 +1,3 @@
-// START: intro
 package server
 
 import (
@@ -25,9 +24,12 @@ func TestServer(t *testing.T) {
 		client api.LogClient,
 		config *Config,
 	){
-		"produce/consume a message to/from the log succeeds": testProduceConsume,
-		"produce/consume stream succeeds":                    testProduceConsumeStream,
-		"consume past log boundary fails":                    testConsumePastBoundary,
+		"produce/consume a record to/from the log succeeds": testProduceConsume,
+		"produce/consume stream succeeds":                   testProduceConsumeStream,
+		"consume past log boundary fails":                   testConsumePastBoundary,
+		"create/get a booking to/from the log succeeds":     testCreateGetBooking,
+		"create/update a booking to/from the log succeeds":  testCreateUpdateBooking,
+		"get non-existing booking fails":                    testGetNonExisting,
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			client, config, teardown := setupTest(t, nil)
@@ -159,7 +161,6 @@ func testProduceConsumeStream(
 				)
 			}
 		}
-
 	}
 
 	{
@@ -178,6 +179,69 @@ func testProduceConsumeStream(
 			})
 		}
 	}
+}
+
+func testCreateGetBooking(t *testing.T, client api.LogClient, config *Config) {
+	ctx := context.Background()
+	want := newRandomBooking(t)
+	created, err := client.CreateBooking(
+		ctx,
+		&api.CreateBookingRequest{
+			Booking: want,
+		},
+	)
+	require.NoError(t, err)
+	want.CreatedAt = created.Booking.CreatedAt
+
+	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
+		Uuid: want.Uuid,
+	})
+	require.NoError(t, err)
+	assertBooking(t, want, got.Booking)
+	require.Nil(t, got.Booking.UpdatedAt)
+}
+
+func testCreateUpdateBooking(t *testing.T, client api.LogClient,
+	config *Config) {
+	ctx := context.Background()
+	want := newRandomBooking(t)
+	created, err := client.CreateBooking(
+		ctx,
+		&api.CreateBookingRequest{
+			Booking: want,
+		},
+	)
+	require.NoError(t, err)
+	want.CreatedAt = created.Booking.CreatedAt
+	want.StartDate = "2023-02-15"
+	want.EndDate = "2023-02-18"
+
+	got, err := client.UpdateBooking(ctx, &api.UpdateBookingRequest{
+		Booking: want,
+	})
+	require.NoError(t, err)
+	assertBooking(t, want, got.Booking)
+	require.NotNil(t, got.Booking.UpdatedAt)
+}
+
+func testGetNonExisting(t *testing.T, client api.LogClient, config *Config) {
+	ctx := context.Background()
+	u := uuid.NewString()
+	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
+		Uuid: u,
+	})
+	require.Nil(t, got)
+	require.Errorf(t, err, "no booking found for UUID: %s", u)
+}
+
+func assertBooking(t *testing.T, want *api.Booking, got *api.Booking) {
+	require.Equal(t, want.Uuid, got.Uuid)
+	require.Equal(t, want.Email, got.Email)
+	require.Equal(t, want.FullName, got.FullName)
+	require.Equal(t, want.StartDate, got.StartDate)
+	require.Equal(t, want.EndDate, got.EndDate)
+	require.Equal(t, true, got.Active)
+	require.Equal(t, want.CreatedAt.AsTime(), got.CreatedAt.AsTime())
 }
 
 func newRandomBooking(t *testing.T) *api.Booking {
