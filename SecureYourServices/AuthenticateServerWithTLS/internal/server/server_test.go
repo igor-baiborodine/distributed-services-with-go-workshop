@@ -11,77 +11,105 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateServerWithTLS/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateServerWithTLS/config"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthenticateServerWithTLS/internal/log"
 )
 
 func TestServer(t *testing.T) {
-	for scenario, fn := range map[string]func(
-		t *testing.T,
-		client api.LogClient,
-		config *Config,
-	){
-		"produce/consume a record to/from the log succeeds": testProduceConsume,
-		"produce/consume stream succeeds":                   testProduceConsumeStream,
-		"consume past log boundary fails":                   testConsumePastBoundary,
-		"create/get a booking to/from the log succeeds":     testCreateGetBooking,
-		"create/update a booking to/from the log succeeds":  testCreateUpdateBooking,
-		"get non-existing booking fails":                    testGetNonExisting,
-	} {
-		t.Run(scenario, func(t *testing.T) {
-			client, config, teardown := setupTest(t, nil)
+	tests := []struct {
+		desc string
+		fn   func(t *testing.T, client api.LogClient, cfg *Config)
+		tls  bool
+	}{
+		{"produce/consume a record to/from the log succeeds",
+			testProduceConsume, true},
+		{"produce/consume stream succeeds",
+			testProduceConsumeStream, true},
+		{"consume past log boundary fails",
+			testConsumePastBoundary, true},
+		{"create/get a booking to/from the log succeeds",
+			testCreateGetBooking, true},
+		{"create/update a booking to/from the log succeeds",
+			testCreateUpdateBooking, true},
+		{"get non-existing booking fails", testGetNonExisting, true},
+		{"insecure fails", testInsecureGetNonExisting, false},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			client, cfg, teardown := setupTest(t, nil, test.tls)
 			defer teardown()
-			fn(t, client, config)
+			test.fn(t, client, cfg)
 		})
 	}
 }
 
-func setupTest(t *testing.T, fn func(*Config)) (
+func setupTest(t *testing.T, fn func(*Config), tls bool) (
 	client api.LogClient,
-	config *Config,
+	cfg *Config,
 	teardown func(),
 ) {
 	t.Helper()
 
-	l, err := net.Listen("tcp", ":0")
+	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
+	clientTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
+		CAFile: config.CAFile,
+	})
 	require.NoError(t, err)
+
+	clientCreds := insecure.NewCredentials()
+	if tls {
+		clientCreds = credentials.NewTLS(clientTLSConfig)
+	}
+	cc, err := grpc.Dial(
+		l.Addr().String(),
+		grpc.WithTransportCredentials(clientCreds),
+	)
+	require.NoError(t, err)
+
+	client = api.NewLogClient(cc)
+
+	serverTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
+		CertFile:      config.ServerCertFile,
+		KeyFile:       config.ServerKeyFile,
+		CAFile:        config.CAFile,
+		ServerAddress: l.Addr().String(),
+	})
+	require.NoError(t, err)
+	serverCreds := credentials.NewTLS(serverTLSConfig)
 
 	dir, err := os.MkdirTemp("", "server-test")
 	require.NoError(t, err)
 
-	clog, err := log.NewLog(dir, log.Config{})
+	bl, err := log.NewBookingLog(dir, log.Config{})
 	require.NoError(t, err)
 
-	config = &Config{
-		BookingLog: clog,
+	cfg = &Config{
+		BookingLog: bl,
 	}
 	if fn != nil {
-		fn(config)
+		fn(cfg)
 	}
-	server, err := NewGRPCServer(config)
+	server, err := NewGRPCServer(cfg, grpc.Creds(serverCreds))
 	require.NoError(t, err)
 
 	go func() {
 		server.Serve(l)
 	}()
 
-	client = api.NewLogClient(cc)
-
-	return client, config, func() {
+	return client, cfg, func() {
 		server.Stop()
 		cc.Close()
 		l.Close()
-		clog.Remove()
 	}
 }
-
 func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
 	b := newRandomBooking(t)
@@ -230,8 +258,23 @@ func testGetNonExisting(t *testing.T, client api.LogClient, config *Config) {
 	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
 		Uuid: u,
 	})
-	require.Nil(t, got)
+	require.Nilf(t, got, "get booking response should be nil")
 	require.Errorf(t, err, "no booking found for UUID: %s", u)
+}
+
+func testInsecureGetNonExisting(t *testing.T, client api.LogClient,
+	config *Config) {
+	ctx := context.Background()
+	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
+		Uuid: uuid.NewString(),
+	})
+	require.Nilf(t, got, "get booking response should be nil")
+	require.Error(t, err)
+
+	gotCode, wantCode := status.Code(err), codes.Unavailable
+	if gotCode != wantCode {
+		t.Fatalf("got code: %d, want: %d", gotCode, wantCode)
+	}
 }
 
 func assertBooking(t *testing.T, want *api.Booking, got *api.Booking) {

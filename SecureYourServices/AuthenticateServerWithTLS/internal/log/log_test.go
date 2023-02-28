@@ -32,7 +32,7 @@ func TestLog(t *testing.T) {
 
 			c := Config{}
 			c.Segment.MaxStoreBytes = 1024
-			log, err := NewLog(dir, c)
+			log, err := NewBookingLog(dir, c)
 			require.NoError(t, err)
 
 			fn(t, log)
@@ -86,7 +86,7 @@ func testInitExisting(t *testing.T, log *Log) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), got)
 
-	n, err := NewLog(log.Dir, log.Config)
+	n, err := NewBookingLog(log.Dir, log.Config)
 	require.NoError(t, err)
 
 	got, err = n.LowestOffset()
