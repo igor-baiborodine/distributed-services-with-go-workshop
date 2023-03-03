@@ -13,6 +13,6 @@ $ go install github.com/cloudflare/cfssl/cmd/cfssljson@latest
 
 ```shell
 $ make clean init compile
-$ make gencerts
+$ make gencert
 $ make test
 ```

@@ -8,16 +8,18 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
+	_ "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/auth"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/config"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/log"
 )
@@ -25,33 +27,29 @@ import (
 func TestServer(t *testing.T) {
 	tests := []struct {
 		desc string
-		fn   func(t *testing.T, client api.LogClient, cfg *Config)
-		tls  bool
+		fn   func(t *testing.T, rootClient api.LogClient,
+			nobodyClient api.LogClient, cfg *Config)
 	}{
-		{"produce/consume a record to/from the log succeeds",
-			testProduceConsume, true},
-		{"produce/consume stream succeeds",
-			testProduceConsumeStream, true},
-		{"consume past log boundary fails",
-			testConsumePastBoundary, true},
-		{"create/get a booking to/from the log succeeds",
-			testCreateGetBooking, true},
-		{"create/update a booking to/from the log succeeds",
-			testCreateUpdateBooking, true},
-		{"get non-existing booking fails", testGetNonExisting, true},
-		{"insecure fails", testInsecureGetNonExisting, false},
+		{"produce/consume a record to/from the log succeeds", testProduceConsume},
+		{"produce/consume stream succeeds", testProduceConsumeStream},
+		{"consume past log boundary fails", testConsumePastBoundary},
+		{"create/get a booking to/from the log succeeds", testCreateGetBooking},
+		{"create/update a booking to/from the log succeeds", testCreateUpdateBooking},
+		{"get non-existing booking fails", testGetNonExisting},
+		{"unauthorized fails", testUnauthorized},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			client, cfg, teardown := setupTest(t, nil, test.tls)
+			rootClient, nobodyClient, cfg, teardown := setupTest(t, nil)
 			defer teardown()
-			test.fn(t, client, cfg)
+			test.fn(t, rootClient, nobodyClient, cfg)
 		})
 	}
 }
 
-func setupTest(t *testing.T, fn func(*Config), tls bool) (
-	client api.LogClient,
+func setupTest(t *testing.T, fn func(*Config)) (
+	rootClient api.LogClient,
+	nobodyClient api.LogClient,
 	cfg *Config,
 	teardown func(),
 ) {
@@ -60,24 +58,37 @@ func setupTest(t *testing.T, fn func(*Config), tls bool) (
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	clientTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
-		CertFile: config.ClientCertFile,
-		KeyFile:  config.ClientKeyFile,
-		CAFile:   config.CAFile,
-	})
-	require.NoError(t, err)
-
-	clientCreds := insecure.NewCredentials()
-	if tls {
-		clientCreds = credentials.NewTLS(clientTLSConfig)
+	newClient := func(crtPath, keyPath string) (
+		*grpc.ClientConn,
+		api.LogClient,
+		[]grpc.DialOption,
+	) {
+		tlsConfig, err := config.SetupTLSConfig(config.TLSConfig{
+			CertFile: crtPath,
+			KeyFile:  keyPath,
+			CAFile:   config.CAFile,
+			Server:   false,
+		})
+		require.NoError(t, err)
+		tlsCreds := credentials.NewTLS(tlsConfig)
+		opts := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
+		conn, err := grpc.Dial(l.Addr().String(), opts...)
+		require.NoError(t, err)
+		client := api.NewLogClient(conn)
+		return conn, client, opts
 	}
-	cc, err := grpc.Dial(
-		l.Addr().String(),
-		grpc.WithTransportCredentials(clientCreds),
-	)
-	require.NoError(t, err)
 
-	client = api.NewLogClient(cc)
+	var rootConn *grpc.ClientConn
+	rootConn, rootClient, _ = newClient(
+		config.RootClientCertFile,
+		config.RootClientKeyFile,
+	)
+
+	var nobodyConn *grpc.ClientConn
+	nobodyConn, nobodyClient, _ = newClient(
+		config.NobodyClientCertFile,
+		config.NobodyClientKeyFile,
+	)
 
 	serverTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
 		CertFile:      config.ServerCertFile,
@@ -94,9 +105,11 @@ func setupTest(t *testing.T, fn func(*Config), tls bool) (
 
 	bl, err := log.NewBookingLog(dir, log.Config{})
 	require.NoError(t, err)
+	authorizer := auth.New(config.ACLModelFile, config.ACLPolicyFile)
 
 	cfg = &Config{
 		BookingLog: bl,
+		Authorizer: authorizer,
 	}
 	if fn != nil {
 		fn(cfg)
@@ -108,18 +121,21 @@ func setupTest(t *testing.T, fn func(*Config), tls bool) (
 		server.Serve(l)
 	}()
 
-	return client, cfg, func() {
+	return rootClient, nobodyClient, cfg, func() {
 		server.Stop()
-		cc.Close()
+		rootConn.Close()
+		nobodyConn.Close()
 		l.Close()
 	}
 }
-func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
+
+func testProduceConsume(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	b := newRandomBooking(t)
 	want := newRecord(t, b)
 
-	produce, err := client.Produce(
+	produce, err := rootClient.Produce(
 		ctx,
 		&api.ProduceRequest{
 			Record: want,
@@ -127,7 +143,7 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	)
 	require.NoError(t, err)
 
-	consume, err := client.Consume(ctx, &api.ConsumeRequest{
+	consume, err := rootClient.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.Offset,
 	})
 	require.NoError(t, err)
@@ -135,18 +151,15 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	require.Equal(t, want.Offset, consume.Record.Offset)
 }
 
-func testConsumePastBoundary(
-	t *testing.T,
-	client api.LogClient,
-	config *Config,
-) {
+func testConsumePastBoundary(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	b := newRandomBooking(t)
-	produce, err := client.Produce(
+	produce, err := rootClient.Produce(
 		ctx, &api.ProduceRequest{Record: newRecord(t, b)})
 	require.NoError(t, err)
 
-	consume, err := client.Consume(ctx, &api.ConsumeRequest{
+	consume, err := rootClient.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.Offset + 1,
 	})
 	if consume != nil {
@@ -159,11 +172,8 @@ func testConsumePastBoundary(
 	}
 }
 
-func testProduceConsumeStream(
-	t *testing.T,
-	client api.LogClient,
-	config *Config,
-) {
+func testProduceConsumeStream(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	b1, b2 := newRandomBooking(t), newRandomBooking(t)
 	records := []*api.Record{{
@@ -175,7 +185,7 @@ func testProduceConsumeStream(
 	}}
 
 	{
-		stream, err := client.ProduceStream(ctx)
+		stream, err := rootClient.ProduceStream(ctx)
 		require.NoError(t, err)
 
 		for offset, record := range records {
@@ -196,7 +206,7 @@ func testProduceConsumeStream(
 	}
 
 	{
-		stream, err := client.ConsumeStream(
+		stream, err := rootClient.ConsumeStream(
 			ctx,
 			&api.ConsumeRequest{Offset: 0},
 		)
@@ -213,10 +223,11 @@ func testProduceConsumeStream(
 	}
 }
 
-func testCreateGetBooking(t *testing.T, client api.LogClient, config *Config) {
+func testCreateGetBooking(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	want := newRandomBooking(t)
-	created, err := client.CreateBooking(
+	created, err := rootClient.CreateBooking(
 		ctx,
 		&api.CreateBookingRequest{
 			Booking: want,
@@ -225,7 +236,7 @@ func testCreateGetBooking(t *testing.T, client api.LogClient, config *Config) {
 	require.NoError(t, err)
 	want.CreatedAt = created.Booking.CreatedAt
 
-	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
+	got, err := rootClient.GetBooking(ctx, &api.GetBookingRequest{
 		Uuid: want.Uuid,
 	})
 	require.NoError(t, err)
@@ -233,11 +244,11 @@ func testCreateGetBooking(t *testing.T, client api.LogClient, config *Config) {
 	require.Nil(t, got.Booking.UpdatedAt)
 }
 
-func testCreateUpdateBooking(t *testing.T, client api.LogClient,
-	config *Config) {
+func testCreateUpdateBooking(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	want := newRandomBooking(t)
-	created, err := client.CreateBooking(
+	created, err := rootClient.CreateBooking(
 		ctx,
 		&api.CreateBookingRequest{
 			Booking: want,
@@ -248,7 +259,7 @@ func testCreateUpdateBooking(t *testing.T, client api.LogClient,
 	want.StartDate = "2023-02-15"
 	want.EndDate = "2023-02-18"
 
-	got, err := client.UpdateBooking(ctx, &api.UpdateBookingRequest{
+	got, err := rootClient.UpdateBooking(ctx, &api.UpdateBookingRequest{
 		Booking: want,
 	})
 	require.NoError(t, err)
@@ -256,29 +267,29 @@ func testCreateUpdateBooking(t *testing.T, client api.LogClient,
 	require.NotNil(t, got.Booking.UpdatedAt)
 }
 
-func testGetNonExisting(t *testing.T, client api.LogClient, config *Config) {
+func testGetNonExisting(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
 	u := uuid.NewString()
-	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
+	got, err := rootClient.GetBooking(ctx, &api.GetBookingRequest{
 		Uuid: u,
 	})
 	require.Nilf(t, got, "get booking response should be nil")
 	require.Errorf(t, err, "no booking found for UUID: %s", u)
 }
 
-func testInsecureGetNonExisting(t *testing.T, client api.LogClient,
-	config *Config) {
+func testUnauthorized(t *testing.T, rootClient api.LogClient,
+	nobodyClient api.LogClient, config *Config) {
 	ctx := context.Background()
-	got, err := client.GetBooking(ctx, &api.GetBookingRequest{
-		Uuid: uuid.NewString(),
-	})
+	got, err := nobodyClient.GetBooking(ctx,
+		&api.GetBookingRequest{Uuid: uuid.New().String()})
+
 	require.Nilf(t, got, "get booking response should be nil")
 	require.Error(t, err)
 
-	gotCode, wantCode := status.Code(err), codes.Unavailable
-	if gotCode != wantCode {
-		t.Fatalf("got code: %d, want: %d", gotCode, wantCode)
-	}
+	s := status.Convert(err)
+	assert.Equal(t, s.Code(), codes.PermissionDenied)
+	assert.Equal(t, s.Message(), "nobody not permitted to getBooking to *")
 }
 
 func assertBooking(t *testing.T, want *api.Booking, got *api.Booking) {
