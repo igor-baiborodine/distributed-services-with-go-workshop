@@ -17,10 +17,10 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
-	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/api/v1"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/auth"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/config"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/SecureYourServices/AuthorizeWithAccessControlLists/internal/log"
+	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ObserveYourSystems/api/v1"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ObserveYourSystems/auth"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ObserveYourSystems/config"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ObserveYourSystems/internal/log"
 )
 
 func TestServer(t *testing.T) {
