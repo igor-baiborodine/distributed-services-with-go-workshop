@@ -1,4 +1,4 @@
-CONFIG_PATH=${HOME}/.proglog/
+CONFIG_PATH=${HOME}/.proglog
 
 .PHONY: clean
 clean:
@@ -42,9 +42,13 @@ gencert:
 
 	cp test/policy.csv $(CONFIG_PATH)/policy.csv
 
-.PHONY: test
-test:
-	go test -race ./...
+.PHONY: test-log
+test-log:
+	go test -race ./internal/log
+
+.PHONY: test-server
+test-server:
+	go test -race ./internal/server -v -debug=true
 
 .PHONY: compile
 compile:
