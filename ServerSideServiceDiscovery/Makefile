@@ -42,13 +42,11 @@ gencert:
 
 	cp test/policy.csv $(CONFIG_PATH)/policy.csv
 
-.PHONY: test-log
-test-log:
-	go test -race ./internal/log
-
-.PHONY: test-server
-test-server:
+.PHONY: test
+test:
 	go test -race ./internal/server -v -debug=true
+	go test -race ./internal/log
+	go test -race ./internal/discovery
 
 .PHONY: compile
 compile:
