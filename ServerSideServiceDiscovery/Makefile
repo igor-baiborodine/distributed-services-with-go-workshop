@@ -44,9 +44,7 @@ gencert:
 
 .PHONY: test
 test:
-	go test -race ./internal/server -v -debug=true
-	go test -race ./internal/log
-	go test -race ./internal/discovery
+	go test -race ./...
 
 .PHONY: compile
 compile:
