@@ -23,7 +23,7 @@ import (
 
 	api "github.com/igor-baiborodine/distributed-services-with-go-workshop/ServerSideServiceDiscovery/api/v1"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServerSideServiceDiscovery/auth"
-	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServerSideServiceDiscovery/config"
+	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServerSideServiceDiscovery/internal/config"
 	"github.com/igor-baiborodine/distributed-services-with-go-workshop/ServerSideServiceDiscovery/internal/log"
 )
 

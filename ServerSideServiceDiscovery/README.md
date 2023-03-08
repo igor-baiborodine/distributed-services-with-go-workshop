@@ -2,11 +2,10 @@
 
 ### Prerequisites
 
-#### Zap & OpenCensus
+#### Serf
 
 ```shell
-$ go install go.uber.org/zap@latest
-$ go isntall go.opencensus.io@latest
+$ go install github.com/hashicorp/serf@latest
 ```
 
 ### Tests
@@ -14,6 +13,5 @@ $ go isntall go.opencensus.io@latest
 ```shell
 $ make clean init compile
 $ make gencerts
-$ make test-log
-$ make test-server
+$ make test
 ```
