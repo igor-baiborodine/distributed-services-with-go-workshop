@@ -1,5 +1,0 @@
-p, root, *, produce
-p, root, *, consume
-p, root, *, getBooking
-p, root, *, createBooking
-p, root, *, updateBooking
