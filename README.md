@@ -7,7 +7,7 @@ but is updated and executed against the latest versions of dependent Go packages
 
 **Table of Contents**
 
-- [ ] 1.Let's Go
+- [X] 1.[Let's Go](/LetsGo)
 - [ ] 2.Structure Data with Protocol Buffers
 - [ ] 3.Write a Log Package
 - [ ] 4.Serve Requests with gRPC
