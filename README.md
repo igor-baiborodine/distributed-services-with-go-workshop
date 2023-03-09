@@ -11,7 +11,7 @@ but is updated and executed against the latest versions of dependent Go packages
 - [X] 2.[Structure Data with Protocol Buffers](/StructureDataWithProtobuf) ([`a31f949`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/a31f949476e53ad012d92ea2f2f45bd873ad5c71))
 - [X] 3.[Write a Log Package](/WriteALogPackage) ([`7bc9cc1`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/7bc9cc1da97b385626eac96064760421c93f8d8e))
 - [X] 4.[Serve Requests with gRPC](/ServeRequestsWithgRPC) ([`198263c`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/198263ca48841271406253c83189bbfd399996ba))
-- [X] 5.[Secure Your Services](/SecureYourServices)
+- [X] 5.[Secure Your Services](/SecureYourServices) ([`9fae48c`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/9fae48cb95dc687704cd7b83ede88f4dc683b16a))
 - [ ] 6.Observe Your Services
 - [ ] 7.Server-to-Server Service Discovery
 - [ ] 8.Coordinate Your Services with Consensus
