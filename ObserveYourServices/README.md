@@ -2,17 +2,18 @@
 
 ### Prerequisites
 
-#### CloudFlare CLI
+#### Zap & OpenCensus
 
 ```shell
-$ go install github.com/cloudflare/cfssl/cmd/cfssl@latest
-$ go install github.com/cloudflare/cfssl/cmd/cfssljson@latest
+$ go install go.uber.org/zap@latest
+$ go isntall go.opencensus.io@latest
 ```
 
 ### Tests
 
 ```shell
 $ make clean init compile
-$ make gencert
-$ make test
+$ make gencerts
+$ make test-log
+$ make test-server
 ```
