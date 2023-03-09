@@ -9,7 +9,7 @@ but is updated and executed against the latest versions of dependent Go packages
 
 - [X] 1.[Let's Go](/LetsGo) ([`16ee475`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/16ee475f56930642ef5d8e9b44d866dc010b4c73))
 - [X] 2.[Structure Data with Protocol Buffers](/StructureDataWithProtobuf) ([`a31f949`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/a31f949476e53ad012d92ea2f2f45bd873ad5c71))
-- [ ] 3.Write a Log Package
+- [X] 3.[Write a Log Package](/WriteALogPackage)
 - [ ] 4.Serve Requests with gRPC
 - [ ] 5.Secure Your Services
 - [ ] 6.Observe Your Services
