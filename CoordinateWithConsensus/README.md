@@ -2,10 +2,10 @@
 
 ### Prerequisites
 
-#### Serf
+#### Raft
 
 ```shell
-go install github.com/hashicorp/serf@latest
+go install github.com/hashicorp/raft@latest
 ```
 
 ### Tests
