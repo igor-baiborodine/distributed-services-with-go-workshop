@@ -228,6 +228,22 @@ func (l *DistributedLog) Close() error {
 	return l.log.Close()
 }
 
+func (l *DistributedLog) GetServers() ([]*api.Server, error) {
+	future := l.raft.GetConfiguration()
+	if err := future.Error(); err != nil {
+		return nil, err
+	}
+	var servers []*api.Server
+	for _, server := range future.Configuration().Servers {
+		servers = append(servers, &api.Server{
+			Id:       string(server.ID),
+			RpcAddr:  string(server.Address),
+			IsLeader: l.raft.Leader() == server.Address,
+		})
+	}
+	return servers, nil
+}
+
 var _ raft.FSM = (*fsm)(nil)
 
 type fsm struct {
@@ -240,31 +256,31 @@ const (
 	AppendRequestType RequestType = 0
 )
 
-func (l *fsm) Apply(record *raft.Log) interface{} {
+func (f *fsm) Apply(record *raft.Log) interface{} {
 	buf := record.Data
 	reqType := RequestType(buf[0])
 	switch reqType {
 	case AppendRequestType:
-		return l.applyAppend(buf[1:])
+		return f.applyAppend(buf[1:])
 	}
 	return nil
 }
 
-func (l *fsm) applyAppend(b []byte) interface{} {
+func (f *fsm) applyAppend(b []byte) interface{} {
 	var req api.ProduceRequest
 	err := proto.Unmarshal(b, &req)
 	if err != nil {
 		return err
 	}
-	offset, err := l.log.Append(req.Record)
+	offset, err := f.log.Append(req.Record)
 	if err != nil {
 		return err
 	}
 	return &api.ProduceResponse{Offset: offset}
 }
 
-func (l *fsm) Snapshot() (raft.FSMSnapshot, error) {
-	r := l.log.Reader()
+func (f *fsm) Snapshot() (raft.FSMSnapshot, error) {
+	r := f.log.Reader()
 	return &snapshot{reader: r}, nil
 }
 
@@ -284,7 +300,7 @@ func (s *snapshot) Persist(sink raft.SnapshotSink) error {
 
 func (s *snapshot) Release() {}
 
-func (l *fsm) Restore(r io.ReadCloser) error {
+func (f *fsm) Restore(r io.ReadCloser) error {
 	b := make([]byte, lenWidth)
 	var buf bytes.Buffer
 	for i := 0; ; i++ {
@@ -303,12 +319,12 @@ func (l *fsm) Restore(r io.ReadCloser) error {
 			return err
 		}
 		if i == 0 {
-			l.log.Config.Segment.InitialOffset = record.Offset
-			if err := l.log.Reset(); err != nil {
+			f.log.Config.Segment.InitialOffset = record.Offset
+			if err := f.log.Reset(); err != nil {
 				return err
 			}
 		}
-		if _, err = l.log.Append(record); err != nil {
+		if _, err = f.log.Append(record); err != nil {
 			return err
 		}
 		buf.Reset()
@@ -399,7 +415,6 @@ func (s *StreamLayer) Dial(
 ) (net.Conn, error) {
 	dialer := &net.Dialer{Timeout: timeout}
 	var conn, err = dialer.Dial("tcp", string(addr))
-
 	if err != nil {
 		return nil, err
 	}
