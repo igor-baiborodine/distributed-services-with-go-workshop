@@ -15,6 +15,6 @@ but is updated and executed against the latest versions of dependent Go packages
 - [X] 6.[Observe Your Services](/ObserveYourServices) ([`b73e498`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/b73e49880a489ab7e9ee6e917c9fd92785d8c5eb))
 - [X] 7.[Server-to-Server Service Discovery](/ServerSideServiceDiscovery) ([`3c2dba8`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/3c2dba8f20fa87a958d79aa4e24a89b23038c35d))
 - [X] 8.[Coordinate Your Services with Consensus](/CoordinateWithConsensus) ([`d8d41c6`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/d8d41c6bece34b10f5fbb5f61a0b9a1c557f647a))
-- [X] 9.[Discover Servers and Load Balance from the Client](/ClientSideServiceDiscovery)
+- [X] 9.[Discover Servers and Load Balance from the Client](/ClientSideServiceDiscovery) ([`a5321d0`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/a5321d04a5bc224e73cf7df09f9e0623af92c633))
 - [ ] 10.Deploy Applications with Kubernetes Locally
 - [ ] 11.Deploy Applications with Kubernetes to the Cloud
