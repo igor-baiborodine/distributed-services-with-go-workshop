@@ -8,7 +8,9 @@ service Log {
   rpc Produce(ProduceRequest) returns (ProduceResponse) {}
   rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
   rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {}
-  rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse) {}
+  rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse)
+  {}
+  rpc GetServers(GetServersRequest) returns (GetServersResponse) {}
 }
 
 message ProduceRequest  {
@@ -28,8 +30,20 @@ message ConsumeResponse {
 }
 
 message Record {
-  bytes  value = 1;
+  bytes value = 1;
   uint64 offset = 2;
   uint64 term = 3;
   uint32 type = 4;
+}
+
+message GetServersRequest {}
+
+message GetServersResponse {
+  repeated Server servers = 1;
+}
+
+message Server {
+  string id = 1;
+  string rpc_addr = 2;
+  bool is_leader = 3;
 }
