@@ -61,3 +61,8 @@ gencert:
 .PHONY: test
 test:
 	go test -race ./...
+
+TAG ?= 0.0.1
+
+build-docker:
+	docker build -t github.com/igor-baiborodine/proglog:$(TAG) .
