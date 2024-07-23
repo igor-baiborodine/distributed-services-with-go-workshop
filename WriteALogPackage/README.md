@@ -1,8 +1,8 @@
-## Write a Booking Log Package
+## Write a Log Package
 
 ### Glossary
 
-* **Record**: A booking data stored in the log.
+* **Record**: A data stored in the log.
 * **Store**: A file where the records are stored.
 * **Segment**: An abstraction that ties a store and an offset index together.
 * **Log**: An abstraction that ties all segments together.
