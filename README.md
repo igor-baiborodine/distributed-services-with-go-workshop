@@ -1,5 +1,7 @@
 # distributed-services-with-go-workshop
 
+> 🔥 Campgrounds API is another example application, or a gRPC microservice, to be more precise, whose implementation is heavily inspired by the Mallbots example application from Michael Stack's book "Event-Driven Architecture in Golang." For more details, please see the [campsite-booking-go](https://github.com/igor-baiborodine/campsite-booking-go) GitHub repository.
+
 This workshop covers material from
 the ["Distributed Services with Go"](https://www.amazon.ca/Distributed-Services-Go-Reliable-Maintainable/dp/1680507605)
 book. It contains the same source code as in the original [repository](https://github.com/travisjeffery/proglog) 
