@@ -5,7 +5,7 @@
 #### gRPC Plugin
 
 ```shell
-$ go install google.golang.org/grpc@latest
+$ go get google.golang.org/grpc@latest
 ```
 ### Tests
 

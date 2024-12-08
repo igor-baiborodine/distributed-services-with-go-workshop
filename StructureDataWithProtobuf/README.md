@@ -6,11 +6,11 @@
 
 ```shell
 $ PB_REL="https://github.com/protocolbuffers/protobuf/releases"
-$ curl -LO $PB_REL/download/v21.12/protoc-21.12-linux-x86_64.zip
-$ unzip protoc-21.12-linux-x86_64.zip -d /usr/local/protobuf
+$ curl -LO $PB_REL/download/v28.3/protoc-28.3-linux-x86_64.zip
+$ sudo unzip protoc-28.3-linux-x86_64.zip -d /usr/local/protobuf
 $ echo 'PATH=$PATH:/usr/local/protobuf/bin' >> ~/.profile
 $ protoc --version
-libprotoc 3.21.12
+libprotoc 3.28.3
 ```
 
 #### Protobuf Go Runtime

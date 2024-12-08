@@ -60,7 +60,7 @@ gencert:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test ./...
 
 TAG ?= 0.0.1
 

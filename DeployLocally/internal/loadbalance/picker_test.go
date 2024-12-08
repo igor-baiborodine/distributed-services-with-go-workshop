@@ -77,6 +77,11 @@ type subConn struct {
 	addrs []resolver.Address
 }
 
+func (s *subConn) Shutdown() {
+	// TODO implement me
+	panic("implement me")
+}
+
 func (s *subConn) GetOrBuildProducer(builder balancer.ProducerBuilder) (
 	p balancer.Producer, close func(),
 ) {

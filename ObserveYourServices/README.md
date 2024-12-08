@@ -13,7 +13,7 @@ $ go isntall go.opencensus.io@latest
 
 ```shell
 $ make clean init compile
-$ make gencerts
+$ make gencert
 $ make test-log
 $ make test-server
 ```

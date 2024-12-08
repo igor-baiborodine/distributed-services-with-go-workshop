@@ -12,6 +12,6 @@ go install github.com/hashicorp/serf@latest
 
 ```shell
 $ make clean init compile
-$ make gencerts
+$ make gencert
 $ make test
 ```
