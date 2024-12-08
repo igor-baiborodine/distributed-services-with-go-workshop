@@ -29,7 +29,7 @@ $ ./get_helm.sh
 ### Tests
 ```shell
 $ make clean init compile
-$ make gencerts
+$ make gencert
 $ make test
 ```
 
