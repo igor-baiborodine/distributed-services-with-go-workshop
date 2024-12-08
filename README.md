@@ -20,3 +20,6 @@ but is updated and executed against the latest versions of dependent Go packages
 - [X] 9.[Discover Servers and Load Balance from the Client](/ClientSideServiceDiscovery) ([`a5321d0`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/a5321d04a5bc224e73cf7df09f9e0623af92c633))
 - [X] 10.[Deploy Applications with Kubernetes Locally](/DeployLocally) ([`bd59b6e`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/bd59b6e74ec9be8be8fedc1afa98125e10ac75ea))
 - [X] 11.[Deploy Applications with Kubernetes to the Cloud](/DeployToCloud) ([`2d6c4b2`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/2d6c4b253bb628a95a37848238502baf55081862))
+
+**Updates**
+* 2024-12-08 - Upgrade Go to `v1.23.3` ([`32c76f9`](https://github.com/igor-baiborodine/distributed-services-with-go-workshop/commit/32c76f9e4f2c62367cbc6595e59f5ca84acd3a8b))
